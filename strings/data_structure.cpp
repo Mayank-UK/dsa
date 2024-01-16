@@ -2,7 +2,11 @@
 
 int main()
 {
-    std::cout << "Hello world!";
+    int x;
+
+    std::cout << "Input a number: ";
+    std::cin >> x;
+    std::cout << "Number is: " << x;
 
     return 0;
 }
