@@ -121,6 +121,23 @@ public:
         root = NIL;
     }
 
+    ~RBTree() {
+        freeTree(root);
+        delete NIL;
+    }
+
+private:
+    // Free every real node (post-order), stopping at the NIL sentinel.
+    void freeTree(Node* node) {
+        if (node == NIL)
+            return;
+        freeTree(node->left);
+        freeTree(node->right);
+        delete node;
+    }
+
+public:
+
     // Insert
     void insert(int key) {
         Node* z = new Node(key);
@@ -190,31 +207,95 @@ public:
         cout << "Red-Black Tree Structure:\n";
         printHelper(root, "", true);
     }
+
+    // Standard BST-style lookup (uses parent/binary search; NIL-safe).
+    bool search(int key) {
+        Node* x = root;
+        while (x != NIL) {
+            if (key < x->data) x = x->left;
+            else if (key > x->data) x = x->right;
+            else return true;
+        }
+        return false;
+    }
+
+    bool isEmpty() {
+        return root == NIL;
+    }
 };
 
 // Main
 int main() {
+    cout << "===================== Red-Black Tree Rotations =====================\n";
+
+    // ─── [Complexity] ───
+    cout << "\n[Complexity]\n";
+    cout << "Time:\n";
+    cout << "  insert / search / remove : O(log n)  — height <= 2*log2(n+1)\n";
+    cout << "Space:\n";
+    cout << "  O(n) for nodes + O(log n) recursion/loop stack per operation\n";
+    cout << "Notes:\n";
+    cout << "  Self-balancing BST maintained by color flips + rotations after\n";
+    cout << "  each insert (this demo covers insert fixup; delete is omitted).\n";
+    cout << "  The five Red-Black properties enforced by fixInsert():\n";
+    cout << "    1. Every node is either RED or BLACK.\n";
+    cout << "    2. The root is BLACK.\n";
+    cout << "    3. Every NIL leaf (sentinel) is BLACK.\n";
+    cout << "    4. If a node is RED, both its children are BLACK (no two reds in a row).\n";
+    cout << "    5. Every path from a node down to its descendant NIL leaves passes\n";
+    cout << "       through the same number of BLACK nodes (the black-height).\n";
+    cout << "  Red-Black is LOOSER than AVL (see avl_rotations.cpp): it allows a wider\n";
+    cout << "  imbalance but does FEWER rotations on update. That tradeoff is why\n";
+    cout << "  std::map / std::set are typically implemented as Red-Black trees.\n";
+
+    // ─── [Demo] ───
     RBTree rbt;
 
-    cout << "Red-Black Tree Demonstration\n\n";
-
     int values[] = {10, 20, 30, 15, 25, 5, 40, 35, 50};
+    int n = (int)(sizeof(values) / sizeof(values[0]));
 
-    cout << "Inserting: ";
-    for (int val : values) {
-        cout << val << " ";
-        rbt.insert(val);
-    }
-    cout << "\n\n";
-
-    cout << "Inorder Traversal: ";
-    rbt.inorder();
+    cout << "\n[Demo] Insert sequence: ";
+    for (int i = 0; i < n; i++) cout << values[i] << " ";
     cout << "\n";
 
+    for (int i = 0; i < n; i++)
+        rbt.insert(values[i]);
+
+    cout << "\nInorder with colors (must be sorted ascending; colors shown as R/B):\n  ";
+    rbt.inorder();
+
+    cout << "\nTree structure (indented tree drawing; R = red, B = black):\n";
     rbt.printTree();
 
-    cout << "\nNote: Red-Black trees use rotations + recoloring for balancing.\n";
-    cout << "Rotations happen less frequently than in AVL but properties are stricter.\n";
+    // ─── [Searches] ───
+    cout << "\n[Searches]\n";
+    cout << "  search(25) : " << (rbt.search(25) ? "Found" : "Not Found") << "\n";
+    cout << "  search(100): " << (rbt.search(100) ? "Found" : "Not Found")
+         << "  (missing key)\n";
+
+    // ─── [Edge Cases] ───
+    cout << "\n[Edge Cases]\n";
+
+    cout << "  Insert duplicate 20 (rejected — RBTree keeps unique keys):\n";
+    cout << "    Before: ";
+    rbt.inorder();
+    rbt.insert(20);
+    cout << "    After : ";
+    rbt.inorder();
+
+    cout << "  Search missing key 999: "
+         << (rbt.search(999) ? "Found" : "Not Found") << "\n";
+
+    cout << "  Empty tree:\n";
+    RBTree empty;
+    cout << "    inorder on empty   : ";
+    empty.inorder();
+    cout << "    search(1) on empty : "
+         << (empty.search(1) ? "Found" : "Not Found") << "\n";
+    cout << "    isEmpty() on empty : "
+         << (empty.isEmpty() ? "Yes" : "No") << "\n";
+
+    cout << "\nRed-Black keeps inorder sorted AND height O(log n) via properties 1-5.\n";
 
     return 0;
 }

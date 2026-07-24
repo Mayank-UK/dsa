@@ -181,7 +181,21 @@ private:
                countNodes(node->right);
     }
 
+    // ----------------------------------------------------------
+    // Free every node (post-order) — used by the destructor
+    // so the demo never leaks.
+    // ----------------------------------------------------------
+    void freeTree(Node* node) {
+        if (node == nullptr)
+            return;
+        freeTree(node->left);
+        freeTree(node->right);
+        delete node;
+    }
+
 public:
+
+    ~BST() { freeTree(root); }
 
     // ----------------------------------------------------------
     // Public APIs
@@ -259,59 +273,111 @@ public:
 
 int main() {
 
+    cout << "================ Binary Search Tree Operations ================\n";
+
+    // ─── [Complexity] ───
+    cout << "\n[Complexity]\n";
+    cout << "Time:\n";
+    cout << "  insert / search / remove : O(h) average, h = tree height\n";
+    cout << "  balanced (random input)  : O(log n)\n";
+    cout << "  worst (sorted input)     : O(n)  — degrades to a linked list\n";
+    cout << "  traversals (in/pre/post) : O(n)\n";
+    cout << "Space:\n";
+    cout << "  O(n) for the nodes + O(h) recursion stack per operation\n";
+    cout << "Notes:\n";
+    cout << "  Maintains the BST invariant: left < node < right, so an inorder\n";
+    cout << "  walk yields keys in ascending order. This BST does NOT self-balance;\n";
+    cout << "  insertion order shapes the tree. For guaranteed O(log n), see\n";
+    cout << "  avl_rotations.cpp and red_black_rotations.cpp.\n";
+
+    // ─── [Build / Demo] ───
     BST tree;
 
     int values[] = {
-        50,30,70,20,40,
-        60,80,10,25,35,45
+        50, 30, 70, 20, 40,
+        60, 80, 10, 25, 35, 45
     };
+    int n = (int)(sizeof(values) / sizeof(values[0]));
 
-    for (int x : values)
-        tree.insert(x);
+    cout << "\n[Demo] Insert sequence: ";
+    for (int i = 0; i < n; i++) cout << values[i] << " ";
+    cout << "\n";
 
-    cout << "Inorder: ";
+    for (int i = 0; i < n; i++)
+        tree.insert(values[i]);
+
+    cout << "\nInorder  (sorted ascending): ";
     tree.inorder();
 
-    cout << "Preorder: ";
+    cout << "Preorder (root-first shape) : ";
     tree.preorder();
 
-    cout << "Postorder: ";
+    cout << "Postorder                   : ";
     tree.postorder();
 
-    cout << "Level Order: ";
+    cout << "Level order                 : ";
     tree.levelOrder();
 
-    cout << "\nMinimum: "
-         << tree.minimum() << endl;
+    // ─── [Stats] ───
+    cout << "[Stats]\n";
+    cout << "  Size    : " << tree.size() << "\n";
+    cout << "  Height  : " << tree.height() << "\n";
+    cout << "  Minimum : " << tree.minimum() << "\n";
+    cout << "  Maximum : " << tree.maximum() << "\n";
 
-    cout << "Maximum: "
-         << tree.maximum() << endl;
+    // ─── [Searches] ───
+    cout << "\n[Searches]\n";
+    cout << "  search(60) : " << (tree.search(60) ? "Found" : "Not Found") << "\n";
+    cout << "  search(100): " << (tree.search(100) ? "Found" : "Not Found")
+         << "  (missing key)\n";
 
-    cout << "Height: "
-         << tree.height() << endl;
-
-    cout << "Size: "
-         << tree.size() << endl;
-
-    cout << "\nSearch 60: "
-         << (tree.search(60) ? "Found" : "Not Found")
-         << endl;
-
-    cout << "Search 100: "
-         << (tree.search(100) ? "Found" : "Not Found")
-         << endl;
-
-    cout << "\nDelete 20\n";
-    tree.remove(20);
-
-    cout << "Delete 30\n";
-    tree.remove(30);
-
-    cout << "Delete 50\n";
-    tree.remove(50);
-
-    cout << "\nInorder After Deletion:\n";
+    // ─── [Delete] ───
+    // 30 is an internal node with TWO children — exercises the
+    // in-order successor splice path of remove().
+    cout << "\n[Delete] Remove 30 (a node with two children).\n";
+    cout << "  Before: ";
     tree.inorder();
+    tree.remove(30);
+    cout << "  After : ";
+    tree.inorder();
+
+    cout << "\n[Delete] Remove 50 (root, two children).\n";
+    cout << "  Before: ";
+    tree.inorder();
+    tree.remove(50);
+    cout << "  After : ";
+    tree.inorder();
+
+    // ─── [Edge Cases] ───
+    cout << "\n[Edge Cases]\n";
+
+    cout << "  Insert duplicate 70 (rejected — BST keeps unique keys):\n";
+    cout << "    Before: ";
+    tree.inorder();
+    tree.insert(70);
+    cout << "    After : ";
+    tree.inorder();
+
+    cout << "  Search missing key 999: "
+         << (tree.search(999) ? "Found" : "Not Found") << "\n";
+
+    cout << "  Remove a key not present (999) — tree unchanged:\n";
+    cout << "    Before: ";
+    tree.inorder();
+    tree.remove(999);
+    cout << "    After : ";
+    tree.inorder();
+
+    cout << "  Empty tree operations:\n";
+    BST empty;
+    cout << "    inorder of empty tree : "; empty.inorder();
+    cout << "    search(1) on empty    : "
+         << (empty.search(1) ? "Found" : "Not Found") << "\n";
+    cout << "    minimum() on empty    : " << empty.minimum()
+         << "  (-1 = sentinel for 'empty')\n";
+    cout << "    size() on empty       : " << empty.size() << "\n";
+
+    cout << "\nInorder still sorted ascending after all mutations.\n";
 
     return 0;
 }

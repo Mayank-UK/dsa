@@ -1,10 +1,16 @@
 #include <iostream>
 #include <queue>
 #include <sstream>
+#include <vector>
 using namespace std;
 
+// ===== Deserialization (Level-Order Round-Trip) =====
+// Serialize a tree to the level-order string format (with "#" for nulls) and
+// rebuild an identical tree from it. The DEMO proves the round-trip is
+// faithful: inorder(original) == inorder(rebuilt).
+
 class BinaryTree {
-private:
+public:
     struct Node {
         int data;
         Node* left;
@@ -17,12 +23,22 @@ private:
         }
     };
 
+private:
+    // Post-order free — every node is `new`-ed (including the rebuilt tree).
+    static void freeTree(Node* node) {
+        if (node == nullptr)
+            return;
+        freeTree(node->left);
+        freeTree(node->right);
+        delete node;
+    }
+
 public:
 
     // ----------------------------------------------------------
     // Serialize
     // Level Order Traversal
-    // Time: O(n)
+    // Time: O(n)  Space: O(n)
     // ----------------------------------------------------------
     static string serialize(Node* root) {
 
@@ -55,7 +71,8 @@ public:
 
     // ----------------------------------------------------------
     // Deserialize
-    // Time: O(n)
+    // Time: O(n)  Space: O(n)
+    // Rebuilds the tree level by level, mirroring serialize()'s queue walk.
     // ----------------------------------------------------------
     static Node* deserialize(const string& data) {
 
@@ -100,16 +117,31 @@ public:
     }
 
     // ----------------------------------------------------------
-    // Inorder
+    // Inorder (collected into a vector, so we can compare round-trips)
     // ----------------------------------------------------------
-    static void inorder(Node* root) {
+    static void inorderCollect(Node* node, vector<int>& out) {
 
-        if (root == nullptr)
+        if (node == nullptr)
             return;
 
-        inorder(root->left);
-        cout << root->data << " ";
-        inorder(root->right);
+        inorderCollect(node->left, out);
+        out.push_back(node->data);
+        inorderCollect(node->right, out);
+    }
+
+    static void inorderPrint(Node* root) {
+
+        if (root == nullptr) {
+            cout << "(empty)\n";
+            return;
+        }
+
+        vector<int> vals;
+        inorderCollect(root, vals);
+
+        for (int v : vals)
+            cout << v << " ";
+        cout << endl;
     }
 
     // ----------------------------------------------------------
@@ -138,26 +170,75 @@ public:
 
         return root;
     }
+
+    // Free a built tree (used for both the original and rebuilt trees).
+    static void freeNodeTree(Node* root) { freeTree(root); }
 };
 
 int main() {
 
-    auto root = BinaryTree::createTree();
+    cout << "===== Deserialization (Level-Order Round-Trip) =====\n";
 
-    string serialized =
-        BinaryTree::serialize(root);
+    cout << "\n[Complexity]\n";
+    cout << "Time : O(n) — serialize and deserialize each walk every node once\n";
+    cout << "Space: O(n) — queue + serialized string + rebuilt nodes\n";
+    cout << "Note : Paired with serialization.cpp (serialize-only); this file "
+            "does both and verifies the round-trip.\n";
 
-    cout << "Serialized Tree:\n";
-    cout << serialized << endl;
+    cout << "\n[Demo]\n";
+    cout << "Original tree shape:\n";
+    cout << "         1\n";
+    cout << "       /   \\\n";
+    cout << "      2     3\n";
+    cout << "     / \\   / \\\n";
+    cout << "    4  5  6   7\n";
 
-    auto newRoot =
-        BinaryTree::deserialize(serialized);
+    auto original = BinaryTree::createTree();
 
-    cout << "\nInorder After Deserialization:\n";
+    cout << "\nInorder (original):  ";
+    BinaryTree::inorderPrint(original);
 
-    BinaryTree::inorder(newRoot);
+    // 1) Serialize the original tree to the level-order string.
+    string serialized = BinaryTree::serialize(original);
+    cout << "Serialized string:   " << serialized << endl;
 
-    cout << endl;
+    // 2) Rebuild a brand-new tree from that string.
+    auto rebuilt = BinaryTree::deserialize(serialized);
+
+    cout << "Inorder (rebuilt):   ";
+    BinaryTree::inorderPrint(rebuilt);
+
+    cout << "\n[Verify]\n";
+    vector<int> a, b;
+    BinaryTree::inorderCollect(original, a);
+    BinaryTree::inorderCollect(rebuilt, b);
+
+    bool faithful = (a == b);
+    cout << "inorder(original) == inorder(rebuilt): "
+         << (faithful ? "Yes — round-trip faithful" : "No — MISMATCH")
+         << endl;
+
+    cout << "\n[Edge Cases]\n";
+
+    // Empty string → empty tree.
+    auto emptyTree = BinaryTree::deserialize("");
+    cout << "deserialize(\"\") → empty tree; inorder: ";
+    BinaryTree::inorderPrint(emptyTree);
+
+    // Single-node tree.
+    auto singleOriginal = new BinaryTree::Node(42);
+    string single = BinaryTree::serialize(singleOriginal);
+    auto singleRoot = BinaryTree::deserialize(single);
+    cout << "Single-node tree serialized: \"" << single << "\"\n";
+    cout << "Single-node rebuilt inorder: ";
+    BinaryTree::inorderPrint(singleRoot);
+
+    // No leaks: free every tree we allocated.
+    BinaryTree::freeNodeTree(original);
+    BinaryTree::freeNodeTree(rebuilt);
+    BinaryTree::freeNodeTree(singleOriginal);
+    BinaryTree::freeNodeTree(singleRoot);
+    // emptyTree is nullptr — nothing to free.
 
     return 0;
 }

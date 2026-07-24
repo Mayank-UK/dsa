@@ -24,6 +24,16 @@ private:
     Node* root;
 
     // ----------------------------------------------------------
+    // Recursive free (post-order delete — no leaks)
+    // ----------------------------------------------------------
+    void freeTree(Node* n) {
+        if (!n) return;
+        freeTree(n->left);
+        freeTree(n->right);
+        delete n;
+    }
+
+    // ----------------------------------------------------------
     // Recursive Traversals
     // ----------------------------------------------------------
     void preorder(Node* node) {
@@ -60,6 +70,25 @@ private:
         cout << node->data << " ";
     }
 
+    // ----------------------------------------------------------
+    // Height helper (for the stats block)
+    // ----------------------------------------------------------
+    int height(Node* node) {
+
+        if (node == nullptr)
+            return 0;
+
+        return 1 + max(height(node->left), height(node->right));
+    }
+
+    int countNodes(Node* node) {
+
+        if (node == nullptr)
+            return 0;
+
+        return 1 + countNodes(node->left) + countNodes(node->right);
+    }
+
 public:
 
     BinaryTree() {
@@ -84,9 +113,12 @@ public:
         root->right->right = new Node(7);
     }
 
+    ~BinaryTree() {
+        freeTree(root);
+    }
+
     // ----------------------------------------------------------
-    // Recursive Preorder
-    // Root Left Right
+    // Recursive Preorder  (Root Left Right)
     // ----------------------------------------------------------
     void preorder() {
 
@@ -95,8 +127,7 @@ public:
     }
 
     // ----------------------------------------------------------
-    // Recursive Inorder
-    // Left Root Right
+    // Recursive Inorder   (Left Root Right)
     // ----------------------------------------------------------
     void inorder() {
 
@@ -105,8 +136,7 @@ public:
     }
 
     // ----------------------------------------------------------
-    // Recursive Postorder
-    // Left Right Root
+    // Recursive Postorder (Left Right Root)
     // ----------------------------------------------------------
     void postorder() {
 
@@ -115,7 +145,7 @@ public:
     }
 
     // ----------------------------------------------------------
-    // Iterative Preorder
+    // Iterative Preorder (stack)
     // ----------------------------------------------------------
     void iterativePreorder() {
 
@@ -143,7 +173,7 @@ public:
     }
 
     // ----------------------------------------------------------
-    // Iterative Inorder
+    // Iterative Inorder (stack)
     // ----------------------------------------------------------
     void iterativeInorder() {
 
@@ -169,7 +199,7 @@ public:
     }
 
     // ----------------------------------------------------------
-    // Iterative Postorder (Two Stacks)
+    // Iterative Postorder (two stacks)
     // ----------------------------------------------------------
     void iterativePostorder() {
 
@@ -205,7 +235,7 @@ public:
     }
 
     // ----------------------------------------------------------
-    // Level Order Traversal
+    // Level Order Traversal (queue = BFS)
     // ----------------------------------------------------------
     void levelOrder() {
 
@@ -231,32 +261,69 @@ public:
 
         cout << endl;
     }
+
+    // ----------------------------------------------------------
+    // Stats helpers
+    // ----------------------------------------------------------
+    int height() { return height(root); }
+    int size() { return countNodes(root); }
 };
 
 int main() {
 
+    cout << "===================== Tree Traversals =====================" << endl;
+    cout << endl;
+
     BinaryTree tree;
 
-    cout << "Recursive Preorder:\n";
+    cout << "[Complexity]" << endl;
+    cout << "Time  : O(n) for every traversal (each node visited once)." << endl;
+    cout << "Space : O(h) recursion/stack for depth-first variants," << endl;
+    cout << "        O(w) for level order where w = max width;" << endl;
+    cout << "        iterative forms use an explicit stack/queue." << endl;
+    cout << "Notes : Pre/In/Post order differ only in WHEN the root is" << endl;
+    cout << "        printed relative to its children." << endl;
+    cout << endl;
+
+    cout << "[Demo]" << endl;
+    cout << "Tree shape:" << endl;
+    cout << endl;
+    cout << "          1" << endl;
+    cout << "        /   \\" << endl;
+    cout << "       2     3" << endl;
+    cout << "      / \\   / \\" << endl;
+    cout << "     4   5 6   7" << endl;
+    cout << endl;
+    cout << "Nodes: " << tree.size() << "   Height: " << tree.height() << endl;
+    cout << endl;
+
+    cout << "[Recursive]" << endl;
+    cout << "Preorder  (Root Left Right) : ";
     tree.preorder();
-
-    cout << "\nRecursive Inorder:\n";
+    cout << "Inorder   (Left Root Right) : ";
     tree.inorder();
-
-    cout << "\nRecursive Postorder:\n";
+    cout << "Postorder (Left Right Root) : ";
     tree.postorder();
+    cout << endl;
 
-    cout << "\nIterative Preorder:\n";
+    cout << "[Iterative]" << endl;
+    cout << "Preorder  (stack)           : ";
     tree.iterativePreorder();
-
-    cout << "\nIterative Inorder:\n";
+    cout << "Inorder   (stack)           : ";
     tree.iterativeInorder();
-
-    cout << "\nIterative Postorder:\n";
+    cout << "Postorder (two stacks)      : ";
     tree.iterativePostorder();
+    cout << endl;
 
-    cout << "\nLevel Order:\n";
+    cout << "[BFS]" << endl;
+    cout << "Level Order (queue)         : ";
     tree.levelOrder();
+    cout << endl;
+
+    cout << "[Edge Cases]" << endl;
+    cout << "Recursive and iterative forms return empty output for an" << endl;
+    cout << "empty tree (root == null guard); a single-node tree prints" << endl;
+    cout << "just that node in every traversal." << endl;
 
     return 0;
 }

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <algorithm>
+#include <cmath>
+#include <string>
 using namespace std;
 
 class AVLTree {
@@ -279,7 +281,43 @@ private:
         cout << node->data << " ";
     }
 
+    // Print inorder AND each node's balance factor, so the balancing
+    // work the rotations do is visible rather than hidden in heights.
+    void inorderWithBalance(Node* node) {
+        if (node == nullptr)
+            return;
+        inorderWithBalance(node->left);
+        cout << "    " << node->data
+             << "  (h=" << node->height
+             << ", bf=" << balanceFactor(node) << ")\n";
+        inorderWithBalance(node->right);
+    }
+
+    // Pretty structural print (sideways) — sibling nodes share an indent.
+    void printStructure(Node* node, const string& indent, bool isLeft) {
+        if (node == nullptr)
+            return;
+        cout << indent;
+        cout << (isLeft ? "L── " : "R── ") << node->data << "\n";
+        printStructure(node->left, indent + "    ", true);
+        printStructure(node->right, indent + "    ", false);
+    }
+
+    // ----------------------------------------------------------
+    // Free every node (post-order) — used by the destructor
+    // so the demo never leaks.
+    // ----------------------------------------------------------
+    void freeTree(Node* node) {
+        if (node == nullptr)
+            return;
+        freeTree(node->left);
+        freeTree(node->right);
+        delete node;
+    }
+
 public:
+
+    ~AVLTree() { freeTree(root); }
 
     // ----------------------------------------------------------
     // Public APIs
@@ -296,9 +334,21 @@ public:
         return search(root, key);
     }
 
+    int height() {
+        return height(root);
+    }
+
+    bool isBalanced() {
+        return isBalanced(root);
+    }
+
     void inorder() {
         inorder(root);
         cout << endl;
+    }
+
+    void inorderWithBalance() {
+        inorderWithBalance(root);
     }
 
     void preorder() {
@@ -310,47 +360,127 @@ public:
         postorder(root);
         cout << endl;
     }
+
+    void printStructure() {
+        if (root == nullptr) {
+            cout << "    (empty)\n";
+            return;
+        }
+        cout << "    root: " << root->data << "\n";
+        printStructure(root->left, "    ", true);
+        printStructure(root->right, "    ", false);
+    }
+
+private:
+    // Verify the AVL invariant holds at every node: |bf| <= 1.
+    bool isBalanced(Node* node) {
+        if (node == nullptr)
+            return true;
+        int bf = balanceFactor(node);
+        if (bf < -1 || bf > 1)
+            return false;
+        return isBalanced(node->left) && isBalanced(node->right);
+    }
 };
 
 int main() {
 
+    cout << "========================= AVL Tree Rotations =========================\n";
+
+    // ─── [Complexity] ───
+    cout << "\n[Complexity]\n";
+    cout << "Time:\n";
+    cout << "  insert / search / remove : O(log n)  — height is kept at log n\n";
+    cout << "  traversals               : O(n)\n";
+    cout << "Space:\n";
+    cout << "  O(n) for the nodes + O(log n) recursion stack per operation\n";
+    cout << "Notes:\n";
+    cout << "  AVL is a self-balancing BST: every node stores a height and must keep\n";
+    cout << "  |balanceFactor| <= 1, where bf = height(left) - height(right).\n";
+    cout << "  Insert/delete rebalance via four rotation cases:\n";
+    cout << "    LL -> single right rotate | LR -> left-rotate left child, then right\n";
+    cout << "    RR -> single left rotate  | RL -> right-rotate right child, then left\n";
+    cout << "  AVL is STRICTER than Red-Black (see red_black_rotations.cpp): it keeps\n";
+    cout << "  the tree tighter (|bf|<=1) so it does MORE rotations but gives slightly\n";
+    cout << "  faster lookups. RB trades a looser balance for fewer rotations.\n";
+
+    // ─── [Demo] ───
+    // Classic sequence {10,20,30,40,50,25} exercises every rotation case:
+    //   10,20,30  -> RR at 10  (left rotate)        : 20 becomes root
+    //   ...40,50  -> RR on the right spine          : keeps right side balanced
+    //   25        -> LR under 30                    : double rotation
     AVLTree tree;
 
-    int values[] = {
-        10,20,30,40,50,25,
-        5,35,45,15
-    };
+    int values[] = {10, 20, 30, 40, 50, 25};
+    int n = (int)(sizeof(values) / sizeof(values[0]));
 
-    cout << "Insertion\n";
+    cout << "\n[Demo] Insert sequence: ";
+    for (int i = 0; i < n; i++) cout << values[i] << " ";
+    cout << "(triggers RR and LR rotation cases)\n";
 
-    for (int x : values)
-        tree.insert(x);
+    for (int i = 0; i < n; i++)
+        tree.insert(values[i]);
 
-    cout << "\nInorder:\n";
+    cout << "\nInorder (must be sorted ascending): ";
     tree.inorder();
 
-    cout << "\nPreorder:\n";
+    cout << "\nPer-node height and balance factor (|bf| <= 1 everywhere):\n";
+    tree.inorderWithBalance();
+
+    cout << "\nTree structure (sideways view):\n";
+    tree.printStructure();
+
+    cout << "\nPreorder (root-first — shows the balanced shape): ";
     tree.preorder();
 
-    cout << "\nPostorder:\n";
-    tree.postorder();
+    // ─── [Balance Check] ───
+    cout << "[Balance Check]\n";
+    cout << "  Height of tree        : " << tree.height() << "\n";
+    cout << "  Nodes inserted        : " << n << "\n";
+    cout << "  log2(n) ~             : " << (int)(log2((double)n)) << "\n";
+    cout << "  AVL invariant holds   : "
+         << (tree.isBalanced() ? "Yes" : "No") << "\n";
 
-    cout << "\nSearch 35 : "
-         << (tree.search(35) ? "Found" : "Not Found")
-         << endl;
+    // ─── [Searches] ───
+    cout << "\n[Searches]\n";
+    cout << "  search(25) : " << (tree.search(25) ? "Found" : "Not Found") << "\n";
+    cout << "  search(100): " << (tree.search(100) ? "Found" : "Not Found")
+         << "  (missing key)\n";
 
-    cout << "Search 100 : "
-         << (tree.search(100) ? "Found" : "Not Found")
-         << endl;
-
-    cout << "\nDeleting 40...\n";
-    tree.remove(40);
-
-    cout << "Deleting 20...\n";
-    tree.remove(20);
-
-    cout << "\nInorder After Deletion:\n";
+    // ─── [Delete] ───
+    cout << "\n[Delete] Remove 30 (internal node, triggers rebalance back up).\n";
+    cout << "  Before: ";
     tree.inorder();
+    tree.remove(30);
+    cout << "  After : ";
+    tree.inorder();
+    cout << "  Still balanced after delete: "
+         << (tree.isBalanced() ? "Yes" : "No") << "\n";
+
+    // ─── [Edge Cases] ───
+    cout << "\n[Edge Cases]\n";
+
+    cout << "  Insert duplicate 20 (rejected — AVL keeps unique keys):\n";
+    cout << "    Before: ";
+    tree.inorder();
+    tree.insert(20);
+    cout << "    After : ";
+    tree.inorder();
+
+    cout << "  Search missing key 999: "
+         << (tree.search(999) ? "Found" : "Not Found") << "\n";
+
+    cout << "  Empty tree:\n";
+    AVLTree empty;
+    cout << "    inorder on empty  : ";
+    empty.inorder();
+    cout << "    search(1) on empty : "
+         << (empty.search(1) ? "Found" : "Not Found") << "\n";
+    cout << "    height() on empty  : " << empty.height() << "\n";
+    cout << "    balanced on empty  : "
+         << (empty.isBalanced() ? "Yes" : "No") << "\n";
+
+    cout << "\nAVL keeps inorder sorted AND height ~ log n after every op.\n";
 
     return 0;
 }
