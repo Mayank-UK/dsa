@@ -41,7 +41,7 @@ private:
         while (!node->isLeaf) {
             int i = 0;
             // Find the first key greater than value
-            while (i < node->keys.size() && value >= node->keys[i]) {
+            while (i < (int)node->keys.size() && value >= node->keys[i]) {
                 i++;
             }
             node = node->children[i];
@@ -65,7 +65,7 @@ private:
             node->keys.insert(it, value);
 
             // 2. Check for overflow
-            if (node->keys.size() == m) {
+            if ((int)node->keys.size() == m) {
                 Node* sibling = new Node(true);
                 int splitIndex = m / 2;
 
@@ -85,7 +85,7 @@ private:
         else {
             // 1. Find the correct child to route to
             int i = 0;
-            while (i < node->keys.size() && value >= node->keys[i]) {
+            while (i < (int)node->keys.size() && value >= node->keys[i]) {
                 i++;
             }
 
@@ -98,7 +98,7 @@ private:
                 node->children.insert(node->children.begin() + i + 1, split.newNode);
 
                 // 4. Check for internal node overflow
-                if (node->keys.size() == m) {
+                if ((int)node->keys.size() == m) {
                     Node* sibling = new Node(false);
                     int splitIndex = m / 2;
                     int promoted = node->keys[splitIndex];
@@ -279,6 +279,7 @@ public:
 };
 
 int main() {
+    cout << "================= B+ Tree (order 4) =================\n";
     // Initialize a B+ Tree of order 4
     // Max 4 children per internal node, max 3 keys per node.
     BPlusTree bpt(4);
@@ -313,5 +314,6 @@ int main() {
     bpt.printLeaves();
     bpt.levelOrder();
 
+    cout << "\n=====================================================\n";
     return 0;
 }

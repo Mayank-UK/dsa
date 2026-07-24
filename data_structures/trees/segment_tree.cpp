@@ -210,7 +210,8 @@ int main() {
 
     SegmentTree tree(values);
 
-    cout << "===== Original Array =====\n";
+    cout << "============= Segment Tree =============\n";
+    cout << "\n===== Original Array =====\n";
     tree.displayArray();
 
     cout << "\n===== Segment Tree =====\n";
@@ -257,5 +258,6 @@ int main() {
 
     cout << "\nValue at index 5 : " << tree.at(5) << endl;
 
+    cout << "\n========================================\n";
     return 0;
 }

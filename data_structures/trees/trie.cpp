@@ -256,6 +256,8 @@ public:
 
 int main() {
 
+    cout << "==================== Trie ====================\n";
+
     Trie trie;
 
     trie.insert("cat");
@@ -323,5 +325,6 @@ int main() {
 
     cout << "Empty : " << (trie.empty() ? "Yes" : "No") << endl;
 
+    cout << "\n=============================================\n";
     return 0;
 }

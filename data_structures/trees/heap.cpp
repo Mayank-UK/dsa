@@ -125,7 +125,7 @@ public:
 
         int index = -1;
 
-        for (int i = 0; i < heap.size(); i++) {
+        for (int i = 0; i < (int)heap.size(); i++) {
 
             if (heap[i] == value) {
 
@@ -141,7 +141,7 @@ public:
 
         heap.pop_back();
 
-        if (index < heap.size()) {
+        if (index < (int)heap.size()) {
 
             heapifyUp(index);
 
@@ -209,9 +209,11 @@ public:
 
 int main() {
 
+    cout << "============= Max Heap =============\n";
+
     MaxHeap heap;
 
-    cout << "Building Heap...\n";
+    cout << "\n[Build] Heapify a raw array\n";
 
     vector<int> values = {
         50, 30, 70, 20, 40,
@@ -256,5 +258,6 @@ int main() {
 
     cout << "Empty: " << (heap.empty() ? "Yes" : "No") << endl;
 
+    cout << "\n====================================\n";
     return 0;
 }

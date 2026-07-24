@@ -377,6 +377,43 @@ public:
         cout << endl;
     }
 
+    // Level-order print showing each node's data, balance factor, and height.
+    // Balance factor = height(left) - height(right). An AVL tree keeps every
+    // node in the range [-1, 0, +1]; a value outside that means a rotation is
+    // (or was) needed.
+    void printWithBalance() {
+
+        if (root == nullptr) {
+            cout << "  (empty)\n";
+            return;
+        }
+
+        queue<Node*> q;
+        q.push(root);
+        int level = 0;
+
+        while (!q.empty()) {
+
+            int levelSize = q.size();
+            cout << "  Level " << level << ": ";
+
+            for (int i = 0; i < levelSize; i++) {
+
+                Node* current = q.front();
+                q.pop();
+
+                int bf = getBalance(current);
+                cout << current->data
+                     << "(bf=" << bf << ",h=" << current->height << ") ";
+
+                if (current->left)  q.push(current->left);
+                if (current->right) q.push(current->right);
+            }
+            cout << "\n";
+            level++;
+        }
+    }
+
     int getMin() {
 
         if (root == nullptr)
@@ -409,6 +446,8 @@ public:
 
 int main() {
 
+    cout << "============= AVL Tree (self-balancing) =============\n";
+
     AVLTree avl;
 
     avl.insert(50);
@@ -434,6 +473,9 @@ int main() {
 
     cout << "Level Order: ";
     avl.levelOrder();
+
+    cout << "\nBalance factors (bf in [-1,0,+1] means healthy):\n";
+    avl.printWithBalance();
 
     cout << "\nMinimum: " << avl.getMin() << endl;
     cout << "Maximum: " << avl.getMax() << endl;
@@ -467,5 +509,18 @@ int main() {
 
     cout << "Final Size: " << avl.size() << endl;
 
+    // ── [Rotation trace] watch rebalancing happen as we insert ───────────────
+    cout << "\n[Rotation Trace] inserting 10, 20, 30 forces an RR case\n";
+    cout << "  (a LEFT rotation at the root restores balance)\n";
+    AVLTree demo;
+    demo.insert(10);
+    cout << "\n  after insert(10):\n"; demo.printWithBalance();
+    demo.insert(20);
+    cout << "  after insert(20):\n"; demo.printWithBalance();
+    demo.insert(30);   // bf at 10 hits -2 → RR case → left rotation
+    cout << "  after insert(30)  <- rotation fires, 20 becomes root:\n";
+    demo.printWithBalance();
+
+    cout << "\n=====================================================\n";
     return 0;
 }

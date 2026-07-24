@@ -293,6 +293,8 @@ public:
 };
 
 int main() {
+    cout << "================ Treap (BST + Max-Heap) ================\n";
+
     Treap treap;
 
     treap.insert(50);
@@ -342,6 +344,7 @@ int main() {
 
     cout << "\nFinal Height:        " << treap.height()       << "\n";
     cout << "Final Size:          " << treap.size()         << "\n";
-    
+
+    cout << "\n=========================================================\n";
     return 0;
 }

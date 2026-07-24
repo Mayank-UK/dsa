@@ -150,6 +150,7 @@ public:
 // ─────────────────── Main Function / Testing ───────────────────
 
 int main() {
+    cout << "============ MultiGraph (parallel edges) ============\n";
     cout << "=== Directed Multigraph (e.g., Network Packets between Servers) ===\n";
     MultiGraph network(true);
 
@@ -183,5 +184,6 @@ int main() {
     cout << "\nFinal Graph Structure:\n";
     network.printGraph();
 
+    cout << "\n=====================================================\n";
     return 0;
 }

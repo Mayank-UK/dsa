@@ -178,7 +178,8 @@ int main() {
 
     FenwickTree bit(values);
 
-    cout << "===== Original Array =====\n";
+    cout << "========== Binary Indexed Tree (Fenwick) ==========\n";
+    cout << "\n===== Original Array =====\n";
     bit.displayArray();
 
     cout << "\n===== Binary Indexed Tree =====\n";
@@ -233,5 +234,6 @@ int main() {
 
     cout << "\nEmpty : " << (bit.empty() ? "Yes" : "No") << endl;
 
+    cout << "\n==================================================\n";
     return 0;
 }

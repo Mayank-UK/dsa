@@ -230,6 +230,8 @@ public:
 // ─────────────────── Main Function / Testing ───────────────────
 
 int main() {
+    cout << "============ Undirected Graph ============\n";
+
     UndirectedGraph graph;
 
     // Build a graph with two separate components
@@ -294,5 +296,6 @@ int main() {
         cout << "\n";
     }
 
+    cout << "\n===========================================\n";
     return 0;
 }

@@ -173,7 +173,7 @@ public:
 
         cout << "MST Edges:\n";
 
-        while (!pq.empty() && edgesIncluded < adj.size() - 1) {
+        while (!pq.empty() && edgesIncluded < (int)adj.size() - 1) {
             int weight = pq.top().first;
             int u = pq.top().second.first;
             int v = pq.top().second.second;
@@ -198,7 +198,7 @@ public:
         }
 
         // Check if the graph is disconnected
-        if (edgesIncluded != adj.size() - 1) {
+        if (edgesIncluded != (int)adj.size() - 1) {
             cout << "Graph is disconnected! Spanning forest created instead.\n";
         }
 
@@ -226,8 +226,10 @@ public:
 // ─────────────────── Main Function / Testing ───────────────────
 
 int main() {
+    cout << "============ Weighted Graph ============\n";
+
     // 1. Test Undirected Weighted Graph (Useful for Routing / Spanning Trees)
-    cout << "=== Undirected Weighted Graph ===\n";
+    cout << "\n=== Undirected Weighted Graph ===\n";
     WeightedGraph uGraph(false); 
 
     // Add edges to create a network
@@ -276,5 +278,6 @@ int main() {
         cout << "  Cost 1 -> " << i << " = $" << flightCosts[i] << "\n";
     }
 
+    cout << "\n=========================================\n";
     return 0;
 }

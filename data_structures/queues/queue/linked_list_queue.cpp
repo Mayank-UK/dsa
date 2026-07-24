@@ -1,6 +1,12 @@
 #include <iostream>
 using namespace std;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Queue — Linked-list-backed (dynamic capacity)
+//   FIFO. front = head (dequeue here), rear = tail (enqueue here). Both O(1).
+//   Grows without bound; no overflow.
+// ─────────────────────────────────────────────────────────────────────────────
+
 class Node {
 public:
     int data;
@@ -16,116 +22,102 @@ class Queue {
 private:
     Node* front;
     Node* rear;
+    int len;
 
 public:
     Queue() {
         front = nullptr;
         rear = nullptr;
+        len = 0;
     }
 
-    // Enqueue
     void enqueue(int value) {
-
         Node* newNode = new Node(value);
-
         if (isEmpty()) {
             front = rear = newNode;
-            return;
+        } else {
+            rear->next = newNode;
+            rear = newNode;
         }
-
-        rear->next = newNode;
-        rear = newNode;
+        len++;
     }
 
-    // Dequeue
-    void dequeue() {
-
+    int dequeue(bool& ok) {
         if (isEmpty()) {
-            cout << "Queue Underflow\n";
-            return;
-        }
-
-        Node* temp = front;
-
-        front = front->next;
-
-        if (front == nullptr)
-            rear = nullptr;
-
-        delete temp;
-    }
-
-    // Peek
-    int peek() {
-
-        if (isEmpty()) {
-            cout << "Queue is Empty\n";
+            cout << "  (underflow: dequeue on empty queue)\n";
+            ok = false;
             return -1;
         }
+        ok = true;
+        Node* temp = front;
+        int value = front->data;
+        front = front->next;
+        if (front == nullptr) rear = nullptr;   // queue became empty
+        delete temp;
+        len--;
+        return value;
+    }
 
+    int peek(bool& ok) const {
+        if (isEmpty()) { ok = false; return -1; }
+        ok = true;
         return front->data;
     }
 
-    bool isEmpty() {
-        return front == nullptr;
+    bool isEmpty() const { return front == nullptr; }
+    int  size()    const { return len; }
+
+    void clear() {
+        bool ok;
+        while (!isEmpty()) dequeue(ok);
     }
 
-    int size() {
-
-        int count = 0;
-        Node* current = front;
-
-        while (current != nullptr) {
-            count++;
-            current = current->next;
-        }
-
-        return count;
+    void display() const {
+        if (isEmpty()) { cout << "  Front -> (empty) <- Rear\n"; return; }
+        cout << "  Front -> ";
+        for (Node* c = front; c != nullptr; c = c->next)
+            cout << c->data << " ";
+        cout << "<- Rear   (size " << len << ")\n";
     }
 
-    void display() {
-
-        if (isEmpty()) {
-            cout << "Queue is Empty\n";
-            return;
-        }
-
-        cout << "Front -> ";
-
-        Node* current = front;
-
-        while (current != nullptr) {
-            cout << current->data << " ";
-            current = current->next;
-        }
-
-        cout << "<- Rear\n";
-    }
-
-    ~Queue() {
-
-        while (!isEmpty())
-            dequeue();
-    }
+    ~Queue() { clear(); }
 };
+
+// ─────────────────────────────── Demo ────────────────────────────────────────
 
 int main() {
 
+    cout << "============= Queue (Linked List, dynamic) =============\n";
+
     Queue q;
 
-    q.enqueue(10);
-    q.enqueue(20);
-    q.enqueue(30);
-
+    // ── [Enqueue] ────────────────────────────────────────────────────────────
+    cout << "\n[Enqueue] 10, 20, 30\n";
+    q.enqueue(10); q.enqueue(20); q.enqueue(30);
     q.display();
 
-    cout << "Front Element: " << q.peek() << endl;
+    // ── [Front] ──────────────────────────────────────────────────────────────
+    bool ok;
+    cout << "\n[Front] peek -> " << q.peek(ok) << "\n";
 
-    q.dequeue();
+    // ── [Dequeue] before/after ───────────────────────────────────────────────
+    cout << "\n[Dequeue]\n";
+    cout << "  Before: "; q.display();
+    cout << "  dequeued -> " << q.dequeue(ok) << "\n";
+    cout << "  After : "; q.display();
 
+    // ── [Grow] dynamic ───────────────────────────────────────────────────────
+    cout << "\n[Grow] enqueue 5 more — no overflow (dynamic)\n";
+    q.enqueue(40); q.enqueue(50); q.enqueue(60); q.enqueue(70); q.enqueue(80);
     q.display();
+    cout << "  size: " << q.size() << "\n";
 
-    cout << "Size: " << q.size() << endl;
+    // ── [Edge] underflow ─────────────────────────────────────────────────────
+    cout << "\n[Edge] Drain then operate on empty\n";
+    q.clear();
+    cout << "  size after clear: " << q.size() << "\n";
+    cout << "  dequeue on empty -> " << q.dequeue(ok) << "  (ok=" << boolalpha << ok << ")\n";
 
+    cout << "\n=========================================================\n";
     return 0;
 }

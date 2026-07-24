@@ -589,6 +589,8 @@ public:
 
 int main() {
 
+    cout << "=========== Red-Black Tree (self-balancing) ===========\n";
+
     RedBlackTree rbt;
 
     rbt.insert(50);
@@ -661,5 +663,6 @@ int main() {
     cout << "Final Size:         " << rbt.size()          << "\n";
     cout << "Final Valid RBT:    " << (rbt.isValid() ? "Yes" : "No") << "\n";
 
+    cout << "\n======================================================\n";
     return 0;
 }

@@ -282,6 +282,8 @@ public:
 
 int main() {
 
+    cout << "============= Binary Search Tree =============\n";
+
     BinarySearchTree bst;
 
     bst.insert(50);
@@ -328,5 +330,6 @@ int main() {
     cout << "\nAfter deleting 50\n";
     bst.inorder();
 
+    cout << "\n==============================================\n";
     return 0;
 }

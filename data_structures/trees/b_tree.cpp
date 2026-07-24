@@ -29,7 +29,7 @@ private:
         if (node == nullptr) return nullptr;
 
         int i = 0;
-        int n = node->keys.size();
+        int n = (int)node->keys.size();
 
         // Find the first key greater than or equal to value
         while (i < n && value > node->keys[i]) {
@@ -83,7 +83,7 @@ private:
     // ─────────────────── Insert Non-Full ───────────────────
 
     void insertNonFull(Node* x, int value) {
-        int i = x->keys.size() - 1;
+        int i = (int)x->keys.size() - 1;
 
         if (x->isLeaf) {
             // Find location to insert new key and shift existing keys
@@ -118,7 +118,7 @@ private:
 
     int findKey(Node* x, int value) const {
         int idx = 0;
-        while (idx < x->keys.size() && x->keys[idx] < value)
+        while (idx < (int)x->keys.size() && x->keys[idx] < value)
             ++idx;
         return idx;
     }
@@ -181,11 +181,11 @@ private:
         child->keys.push_back(x->keys[idx]);
 
         // Transfer all keys and children from sibling to child
-        for (int i = 0; i < sibling->keys.size(); ++i)
+        for (int i = 0; i < (int)sibling->keys.size(); ++i)
             child->keys.push_back(sibling->keys[i]);
 
         if (!child->isLeaf) {
-            for (int i = 0; i < sibling->children.size(); ++i)
+            for (int i = 0; i < (int)sibling->children.size(); ++i)
                 child->children.push_back(sibling->children[i]);
         }
 
@@ -198,16 +198,16 @@ private:
 
     void fill(Node* x, int idx) {
         // If previous child has more than t-1 keys, borrow from it
-        if (idx != 0 && x->children[idx - 1]->keys.size() >= t) {
+        if (idx != 0 && (int)x->children[idx - 1]->keys.size() >= t) {
             borrowFromPrev(x, idx);
         }
         // If next child has more than t-1 keys, borrow from it
-        else if (idx != x->keys.size() && x->children[idx + 1]->keys.size() >= t) {
+        else if (idx != (int)x->keys.size() && (int)x->children[idx + 1]->keys.size() >= t) {
             borrowFromNext(x, idx);
         }
         // Otherwise, merge child with its sibling
         else {
-            if (idx != x->keys.size()) {
+            if (idx != (int)x->keys.size()) {
                 merge(x, idx);
             } else {
                 merge(x, idx - 1);
@@ -219,18 +219,18 @@ private:
         int idx = findKey(x, value);
 
         // The key to be removed is present in this node
-        if (idx < x->keys.size() && x->keys[idx] == value) {
+        if (idx < (int)x->keys.size() && x->keys[idx] == value) {
             if (x->isLeaf) {
                 // Case 1: Key is in a leaf node
                 x->keys.erase(x->keys.begin() + idx);
             } else {
                 // Case 2: Key is in an internal node
-                if (x->children[idx]->keys.size() >= t) {
+                if ((int)x->children[idx]->keys.size() >= t) {
                     // Predecessor child has enough keys
                     int pred = getPred(x, idx);
                     x->keys[idx] = pred;
                     removeNode(x->children[idx], pred);
-                } else if (x->children[idx + 1]->keys.size() >= t) {
+                } else if ((int)x->children[idx + 1]->keys.size() >= t) {
                     // Successor child has enough keys
                     int succ = getSucc(x, idx);
                     x->keys[idx] = succ;
@@ -247,15 +247,15 @@ private:
                 return; // Key does not exist in the tree
             }
 
-            bool isLastChild = (idx == x->keys.size());
+            bool isLastChild = (idx == (int)x->keys.size());
 
             // Ensure the child we're traversing to has at least t keys
-            if (x->children[idx]->keys.size() < t) {
+            if ((int)x->children[idx]->keys.size() < t) {
                 fill(x, idx);
             }
 
             // If the last child was merged, we must traverse the previous child
-            if (isLastChild && idx > x->keys.size()) {
+            if (isLastChild && idx > (int)x->keys.size()) {
                 removeNode(x->children[idx - 1], value);
             } else {
                 removeNode(x->children[idx], value);
@@ -283,7 +283,7 @@ private:
 
     int countKeys(Node* node) const {
         if (node == nullptr) return 0;
-        int count = node->keys.size();
+        int count = (int)node->keys.size();
         if (!node->isLeaf) {
             for (Node* child : node->children) {
                 count += countKeys(child);
@@ -316,7 +316,7 @@ private:
     void inorder(Node* node) const {
         if (node != nullptr) {
             int i;
-            for (i = 0; i < node->keys.size(); i++) {
+            for (i = 0; i < (int)node->keys.size(); i++) {
                 if (!node->isLeaf) inorder(node->children[i]);
                 cout << node->keys[i] << " ";
             }
@@ -445,6 +445,7 @@ public:
 };
 
 int main() {
+    cout << "============= B-Tree (min degree t=3) =============\n";
     // Initialize a B-Tree with minimum degree t=3
     // Nodes will have between 2 and 5 keys (except root)
     BTree btree(3);
@@ -492,5 +493,6 @@ int main() {
     cout << "Final Height:       " << btree.height()       << "\n";
     cout << "Final Size (keys):  " << btree.size()         << "\n";
 
+    cout << "\n===================================================\n";
     return 0;
 }

@@ -266,6 +266,8 @@ public:
 // ─────────────────── Main Function / Testing ───────────────────
 
 int main() {
+    cout << "============ Directed Graph (DAG demo) ============\n";
+
     DirectedGraph dag;
 
     // Build a Directed Acyclic Graph (DAG) for tasks/dependencies
@@ -319,5 +321,6 @@ int main() {
     dag.removeVertex(4);
     dag.printGraph();
 
+    cout << "\n==================================================\n";
     return 0;
 }

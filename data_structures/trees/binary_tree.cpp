@@ -205,6 +205,8 @@ public:
 
 int main() {
 
+    cout << "================ Binary Tree ================\n";
+
     BinaryTree tree;
 
     tree.createTree();
@@ -233,5 +235,6 @@ int main() {
 
     cout << "Search 100: " << (tree.search(100) ? "Found" : "Not Found") << endl;
 
+    cout << "\n=============================================\n";
     return 0;
 }

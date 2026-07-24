@@ -85,7 +85,6 @@ private:
                 if (walkDown(next_node)) continue; 
 
                 // Current character being processed is already on the edge
-                int edge_end = (nodes[next_node].end == -1) ? leaf_end : nodes[next_node].end;
                 int current_char_idx = nodes[next_node].start + active_length;
 
                 if (text[current_char_idx] == text[pos]) {
@@ -175,7 +174,7 @@ public:
         active_node = root;
 
         // Build the tree online character by character
-        for (int i = 0; i < text.length(); i++) {
+        for (int i = 0; i < (int)text.length(); i++) {
             extendSuffixTree(i);
         }
 
@@ -189,17 +188,49 @@ public:
         printDFS(root, 0);
         cout << "-----------------------------\n";
     }
+
+    // Pattern search in O(m) by walking edges from the root.
+    // Returns true if `pattern` is a substring of the original text.
+    bool contains(const string& pattern) {
+        int cur = root;
+        size_t pi = 0;
+        while (pi < pattern.size()) {
+            char c = pattern[pi];
+            auto it = nodes[cur].children.find(c);
+            if (it == nodes[cur].children.end()) return false;   // no matching edge
+
+            int child = it->second;
+            int len = edgeLength(child);
+            for (int k = 0; k < len && pi < pattern.size(); k++) {
+                char edgeChar = text[nodes[child].start + k];
+                if (edgeChar == '$') return false;               // ran into sentinel
+                if (edgeChar != pattern[pi]) return false;        // mismatch on edge
+                pi++;
+            }
+            cur = child;
+        }
+        return true;   // whole pattern consumed along a valid path
+    }
 };
 
 int main() {
-    string text = "banana";
-    cout << "Original Text: " << text << "\n\n";
+    cout << "================== Suffix Tree ==================\n";
 
-    // Initialize and build the Suffix Tree
+    string text = "banana";
+    cout << "\n[Input] text = \"" << text << "\"\n";
+
+    // Initialize and build the Suffix Tree (Ukkonen's algorithm, O(n))
     SuffixTree st(text);
 
-    // Print the edges of the tree
+    cout << "\n[Structure] edges (leaves tagged with their suffix start index)\n";
     st.printTree();
 
+    // ── [Pattern search] O(m) per query ──────────────────────────────────────
+    cout << "\n[Pattern Search] substring test via edge traversal\n";
+    for (string pat : {"ban", "ana", "na", "nan", "xyz", "banana"}) {
+        cout << "  \"" << pat << "\" -> " << (st.contains(pat) ? "FOUND" : "not found") << "\n";
+    }
+
+    cout << "\n=================================================\n";
     return 0;
 }

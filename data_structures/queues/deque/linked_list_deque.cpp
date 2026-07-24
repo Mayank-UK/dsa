@@ -1,6 +1,11 @@
 #include <iostream>
 using namespace std;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Deque — Doubly-linked-list-backed (dynamic capacity)
+//   Insert/remove at both ends in O(1). front = head, rear = tail. No overflow.
+// ─────────────────────────────────────────────────────────────────────────────
+
 class Deque {
 private:
 
@@ -8,12 +13,7 @@ private:
         int data;
         Node* prev;
         Node* next;
-
-        Node(int value) {
-            data = value;
-            prev = nullptr;
-            next = nullptr;
-        }
+        Node(int value) : data(value), prev(nullptr), next(nullptr) {}
     };
 
     Node* front;
@@ -22,203 +22,105 @@ private:
 
 public:
 
-    Deque() {
-        front = nullptr;
-        rear = nullptr;
-        count = 0;
-    }
+    Deque() : front(nullptr), rear(nullptr), count(0) {}
+    ~Deque() { clear(); }
 
-    ~Deque() {
-        clear();
-    }
-
-    bool isEmpty() {
-        return front == nullptr;
-    }
-
-    int size() {
-        return count;
-    }
+    bool isEmpty() const { return front == nullptr; }
+    int  size()    const { return count; }
 
     void pushFront(int value) {
-
-        Node* newNode = new Node(value);
-
-        if (isEmpty()) {
-            front = rear = newNode;
-        }
-        else {
-            newNode->next = front;
-            front->prev = newNode;
-            front = newNode;
-        }
-
+        Node* n = new Node(value);
+        if (isEmpty()) { front = rear = n; }
+        else { n->next = front; front->prev = n; front = n; }
         count++;
     }
 
     void pushBack(int value) {
-
-        Node* newNode = new Node(value);
-
-        if (isEmpty()) {
-            front = rear = newNode;
-        }
-        else {
-            rear->next = newNode;
-            newNode->prev = rear;
-            rear = newNode;
-        }
-
+        Node* n = new Node(value);
+        if (isEmpty()) { front = rear = n; }
+        else { rear->next = n; n->prev = rear; rear = n; }
         count++;
     }
 
-    void popFront() {
-
-        if (isEmpty()) {
-            cout << "Deque Underflow\n";
-            return;
-        }
-
-        Node* temp = front;
-
-        if (front == rear) {
-            front = rear = nullptr;
-        }
-        else {
-            front = front->next;
-            front->prev = nullptr;
-        }
-
-        delete temp;
-        count--;
+    int popFront(bool& ok) {
+        if (isEmpty()) { cout << "  (underflow: popFront on empty)\n"; ok = false; return -1; }
+        ok = true;
+        Node* t = front;
+        int v = t->data;
+        if (front == rear) front = rear = nullptr;
+        else { front = front->next; front->prev = nullptr; }
+        delete t; count--;
+        return v;
     }
 
-    void popBack() {
-
-        if (isEmpty()) {
-            cout << "Deque Underflow\n";
-            return;
-        }
-
-        Node* temp = rear;
-
-        if (front == rear) {
-            front = rear = nullptr;
-        }
-        else {
-            rear = rear->prev;
-            rear->next = nullptr;
-        }
-
-        delete temp;
-        count--;
+    int popBack(bool& ok) {
+        if (isEmpty()) { cout << "  (underflow: popBack on empty)\n"; ok = false; return -1; }
+        ok = true;
+        Node* t = rear;
+        int v = t->data;
+        if (front == rear) front = rear = nullptr;
+        else { rear = rear->prev; rear->next = nullptr; }
+        delete t; count--;
+        return v;
     }
 
-    int getFront() {
-
-        if (isEmpty()) {
-            cout << "Deque is Empty\n";
-            return -1;
-        }
-
-        return front->data;
+    int getFront(bool& ok) const {
+        if (isEmpty()) { ok = false; return -1; }
+        ok = true; return front->data;
+    }
+    int getBack(bool& ok) const {
+        if (isEmpty()) { ok = false; return -1; }
+        ok = true; return rear->data;
     }
 
-    int getBack() {
+    void clear() { bool ok; while (!isEmpty()) popFront(ok); }
 
-        if (isEmpty()) {
-            cout << "Deque is Empty\n";
-            return -1;
-        }
-
-        return rear->data;
-    }
-
-    void clear() {
-
-        while (!isEmpty()) {
-            popFront();
-        }
-    }
-
-    void displayForward() {
-
-        if (isEmpty()) {
-            cout << "Deque is Empty\n";
-            return;
-        }
-
-        cout << "Front -> ";
-
-        Node* current = front;
-
-        while (current != nullptr) {
-            cout << current->data << " ";
-            current = current->next;
-        }
-
+    void displayForward() const {
+        if (isEmpty()) { cout << "  Front -> (empty) <- Rear\n"; return; }
+        cout << "  Front -> ";
+        for (Node* c = front; c != nullptr; c = c->next) cout << c->data << " ";
         cout << "<- Rear\n";
     }
-
-    void displayBackward() {
-
-        if (isEmpty()) {
-            cout << "Deque is Empty\n";
-            return;
-        }
-
-        cout << "Rear -> ";
-
-        Node* current = rear;
-
-        while (current != nullptr) {
-            cout << current->data << " ";
-            current = current->prev;
-        }
-
+    void displayBackward() const {
+        if (isEmpty()) { cout << "  Rear -> (empty) <- Front\n"; return; }
+        cout << "  Rear -> ";
+        for (Node* c = rear; c != nullptr; c = c->prev) cout << c->data << " ";
         cout << "<- Front\n";
     }
 };
 
+// ─────────────────────────────── Demo ────────────────────────────────────────
+
 int main() {
 
+    cout << "=========== Deque (Doubly Linked List, dynamic) ===========\n";
+
     Deque dq;
+    bool ok;
 
-    dq.pushBack(20);
-    dq.pushBack(30);
+    // ── [Build] both ends ────────────────────────────────────────────────────
+    cout << "\n[Build] pushBack 20,30  pushFront 10  pushBack 40  pushFront 5\n";
+    dq.pushBack(20); dq.pushBack(30);
     dq.pushFront(10);
-    dq.pushFront(5);
     dq.pushBack(40);
+    dq.pushFront(5);
 
-    cout << "Forward Traversal:\n";
-    dq.displayForward();
+    cout << "  Forward  : "; dq.displayForward();
+    cout << "  Backward : "; dq.displayBackward();
+    cout << "  front -> " << dq.getFront(ok) << "   back -> " << dq.getBack(ok)
+         << "   size -> " << dq.size() << "\n";
 
-    cout << "\nBackward Traversal:\n";
-    dq.displayBackward();
+    // ── [Pop] both ends ──────────────────────────────────────────────────────
+    cout << "\n[Pop] popFront -> " << dq.popFront(ok)
+         << "   popBack -> " << dq.popBack(ok) << "\n";
+    cout << "  Forward  : "; dq.displayForward();
 
-    cout << "\nFront: " << dq.getFront() << endl;
-    cout << "Back : " << dq.getBack() << endl;
-    cout << "Size : " << dq.size() << endl;
-
-    cout << "\nPop Front\n";
-    dq.popFront();
-    dq.displayForward();
-
-    cout << "\nPop Back\n";
-    dq.popBack();
-    dq.displayForward();
-
-    cout << "\nPush Front (100)\n";
-    dq.pushFront(100);
-    dq.displayForward();
-
-    cout << "\nPush Back (200)\n";
-    dq.pushBack(200);
-    dq.displayForward();
-
-    cout << "\nClear\n";
+    // ── [Edge] underflow ─────────────────────────────────────────────────────
+    cout << "\n[Edge] drain then pop on empty\n";
     dq.clear();
-    dq.displayForward();
+    cout << "  popFront on empty -> " << dq.popFront(ok) << "  (ok=" << boolalpha << ok << ")\n";
+    cout << "  popBack  on empty -> " << dq.popBack(ok)  << "  (ok=" << ok << ")\n";
 
+    cout << "\n==========================================================\n";
     return 0;
 }
