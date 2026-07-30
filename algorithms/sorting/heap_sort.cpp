@@ -1,65 +1,87 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
+#include <string>
 
 using namespace std;
 
-// To heapify a subtree rooted with node i which is an index in arr[].
-// n is size of heap
+// Sift-down heapify: push arr[i] down within a max-heap of size n
+// until the heap property (parent >= children) is restored.
 void heapify(vector<int>& arr, int n, int i) {
-    int largest = i;       // Initialize largest as root
-    int left = 2 * i + 1;  // Left child index
-    int right = 2 * i + 2; // Right child index
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
 
-    // If left child is larger than root
     if (left < n && arr[left] > arr[largest])
         largest = left;
-
-    // If right child is larger than largest so far
     if (right < n && arr[right] > arr[largest])
         largest = right;
 
-    // If largest is not root, swap and continue heapifying
     if (largest != i) {
         swap(arr[i], arr[largest]);
-        heapify(arr, n, largest);
+        heapify(arr, n, largest);  // keep sifting into the affected subtree
     }
 }
 
-// Main function to do heap sort
+// Heap sort: build a max-heap, then repeatedly swap the root (max) to the
+// tail and re-heapify the shrinking prefix.
 void heapSort(vector<int>& arr) {
     int n = arr.size();
 
-    // Build heap (rearrange array)
-    for (int i = n / 2 - 1; i >= 0; i--) {
+    // Build max-heap bottom-up from the last internal node.
+    for (int i = n / 2 - 1; i >= 0; i--)
         heapify(arr, n, i);
-    }
 
-    // One by one extract an element from heap
+    // Extract maxima one by one into the sorted tail.
     for (int i = n - 1; i > 0; i--) {
-        // Move current root to end
         swap(arr[0], arr[i]);
-
-        // Call max heapify on the reduced heap
         heapify(arr, i, 0);
     }
 }
 
-int main() {
-    vector<int> arr = {12, 11, 13, 5, 6, 7};
-
-    cout << "Original array:\n";
-    for (int num : arr) {
-        cout << num << " ";
-    }
+// ─── Demo helpers ───
+static void printArray(const vector<int>& arr, const string& label) {
+    cout << "  " << label << " : ";
+    if (arr.empty()) { cout << "(empty)\n"; return; }
+    for (int x : arr) cout << x << " ";
     cout << "\n";
+}
 
+static bool isSorted(const vector<int>& arr) {
+    for (size_t i = 1; i < arr.size(); i++)
+        if (arr[i] < arr[i - 1]) return false;
+    return true;
+}
+
+static void runCase(const string& name, vector<int> arr) {
+    printArray(arr, name + " before");
     heapSort(arr);
+    printArray(arr, name + " after ");
+}
 
-    cout << "Sorted array using Heap Sort:\n";
-    for (int num : arr) {
-        cout << num << " ";
-    }
+int main() {
+    cout << "===================== Heap Sort =====================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Best    : O(n log n)\n";
+    cout << "  Average : O(n log n)\n";
+    cout << "  Worst   : O(n log n)\n";
+    cout << "  Space   : O(1)     in-place (O(log n) recursion stack)\n";
+    cout << "  Stable  : No       heap swaps can reorder equal keys\n\n";
+
+    cout << "[Demo]\n";
+    vector<int> arr = {12, 11, 13, 5, 6, 7};
+    printArray(arr, "before");
+    heapSort(arr);
+    printArray(arr, "after ");
+    cout << "  Sorted correctly : " << (isSorted(arr) ? "Yes" : "No") << "\n\n";
+
+    cout << "[Edge Cases]\n";
+    runCase("empty       ", {});
+    runCase("single      ", {42});
+    runCase("duplicates  ", {5, 1, 5, 2, 1, 5});
+    runCase("already sort", {1, 2, 3, 4, 5});
+    runCase("reverse     ", {5, 4, 3, 2, 1});
+    runCase("negatives   ", {0, -3, 8, -1, 4, -7});
     cout << "\n";
 
     return 0;

@@ -1,48 +1,61 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 
-// Function to find the minimum number of platforms required
-int findMinPlatforms(vector<int>& arr, vector<int>& dep) {
-    int n = arr.size();
-
-    // Step 1: Sort arrival and departure arrays independently
+// Greedy: sort arrivals and departures independently, then sweep events in time
+// order. Each arrival (+1 platform) and departure (-1 platform) is consumed in
+// chronological order; the running max is the answer.
+int findMinPlatforms(vector<int> arr, vector<int> dep) {
     sort(arr.begin(), arr.end());
     sort(dep.begin(), dep.end());
 
-    int platformsNeeded = 0;
-    int maxPlatforms = 0;
-    int i = 0; // Pointer for arrivals
-    int j = 0; // Pointer for departures
-
-    // Step 2: Traverse through all events using two pointers
+    int n = (int)arr.size();
+    int platforms = 0, maxPlatforms = 0;
+    int i = 0, j = 0;
     while (i < n && j < n) {
-        // If arrival time is less than or equal to departure, a new platform is needed
+        // <= : a train arriving exactly when another departs still needs its own
+        // platform until the departure completes (same-minute overlap).
         if (arr[i] <= dep[j]) {
-            platformsNeeded++;
+            platforms++;
             i++;
         } else {
-            // A train has departed, free up a platform
-            platformsNeeded--;
+            platforms--;
             j++;
         }
-
-        // Track the maximum platforms needed at any given time
-        maxPlatforms = max(maxPlatforms, platformsNeeded);
+        maxPlatforms = max(maxPlatforms, platforms);
     }
-
     return maxPlatforms;
 }
 
 int main() {
-    // Arrival and departure times (represented in 24-hour format, e.g., 900 = 09:00 AM)
-    vector<int> arrival = {900, 940, 950, 1100, 1500, 1800};
-    vector<int> departure = {910, 1200, 1120, 1130, 1900, 2000};
+    cout << "=============== Minimum Platforms ===============\n\n";
 
-    int minPlatforms = findMinPlatforms(arrival, departure);
-    cout << "Minimum number of platforms required: " << minPlatforms << "\n";
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(n log n)   sorting both arrays\n";
+    cout << "  Space : O(1) extra  (in-place sort of copies)\n";
+    cout << "  Note  : greedy chronological event sweep; max concurrent trains\n\n";
+
+    cout << "[Demo]\n";
+    vector<int> arrival   = {900, 940, 950, 1100, 1500, 1800};
+    vector<int> departure = {910, 1200, 1120, 1130, 1900, 2000};
+    cout << "  arrivals   = ";
+    for (int a : arrival)   cout << a << " ";
+    cout << "\n  departures = ";
+    for (int d : departure) cout << d << " ";
+    cout << "\n";
+    cout << "  minimum platforms = " << findMinPlatforms(arrival, departure) << "\n\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  no trains      : " << findMinPlatforms({}, {}) << "\n";
+    cout << "  one train      : " << findMinPlatforms({100}, {200}) << "\n";
+    cout << "  all at once    : " << findMinPlatforms({100, 100, 100}, {200, 200, 200}) << "\n";
+    cout << "  no overlap (1) : " << findMinPlatforms({100, 300, 500}, {200, 400, 600}) << "\n";
+    cout << "  back-to-back (1): "
+         << findMinPlatforms({100, 200, 300}, {200, 300, 400}) << "  (arr <= dep ties)\n";
+    cout << "\n";
 
     return 0;
 }

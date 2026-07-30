@@ -4,111 +4,106 @@
 
 using namespace std;
 
+// Knuth–Morris–Pratt string matching. The key idea: when a mismatch happens
+// after j matched characters, the LPS (longest proper prefix which is also a
+// suffix) array tells us how far to fall back in the pattern WITHOUT moving the
+// text pointer back. That avoids re-checking characters and gives linear time.
+
 class KMP {
 private:
     string pattern;
     vector<int> lps;
 
-    // Preprocess the pattern to calculate the Longest Prefix Suffix (LPS) array
+    // Build the LPS array: lps[i] = length of the longest proper prefix of
+    // pattern[0..i] that is also a suffix of pattern[0..i].
     void computeLPSArray() {
-        int m = pattern.length();
+        int m = (int)pattern.length();
         lps.assign(m, 0);
-        
-        int len = 0; // Length of the previous longest prefix suffix
+
+        int len = 0;   // length of the current matching prefix
         int i = 1;
-        
-        // Loop calculates lps[i] for i = 1 to m-1
         while (i < m) {
             if (pattern[i] == pattern[len]) {
-                len++;
-                lps[i] = len;
-                i++;
+                lps[i++] = ++len;
+            } else if (len != 0) {
+                len = lps[len - 1];   // fall back, do NOT advance i
             } else {
-                // Mismatch after len matches
-                if (len != 0) {
-                    // Fall back to the previous longest prefix suffix
-                    len = lps[len - 1];
-                } else {
-                    // No prefix suffix match found
-                    lps[i] = 0;
-                    i++;
-                }
+                lps[i++] = 0;
             }
         }
     }
 
 public:
-    // Constructor initializes the pattern and builds the LPS array
-    KMP(const string& input_pattern) {
-        pattern = input_pattern;
+    KMP(const string& p) : pattern(p) {
         computeLPSArray();
     }
 
-    // Search the text using the preprocessed LPS array
-    void search(const string& text) {
-        int n = text.length();
-        int m = pattern.length();
-        
-        if (m == 0 || m > n) {
-            cout << "Pattern is empty or longer than the text.\n";
-            return;
-        }
+    const vector<int>& getLPS() const { return lps; }
 
-        cout << "--- Search Results ---\n";
-        bool found = false;
-        
-        int i = 0; // Index for text
-        int j = 0; // Index for pattern
-        
-        // Loop while there is enough text left to potentially match the pattern
-        while ((n - i) >= (m - j)) {
-            if (pattern[j] == text[i]) {
-                j++;
-                i++;
-            }
-            
-            if (j == m) {
-                // Match found!
-                found = true;
-                cout << "Pattern '" << pattern << "' found starting at index " << i - j << "\n";
-                
-                // Use the LPS array to find the next potential match alignment
-                j = lps[j - 1];
-            } 
-            else if (i < n && pattern[j] != text[i]) {
-                // Mismatch after j matches
-                if (j != 0) {
-                    // Do not match lps[j-1] characters, they will match anyway
-                    j = lps[j - 1];
-                } else {
-                    // If j == 0, move to the next character in the text
-                    i++;
-                }
+    // Returns every start index in `text` where `pattern` occurs.
+    vector<int> search(const string& text) const {
+        vector<int> matches;
+        int n = (int)text.length();
+        int m = (int)pattern.length();
+        if (m == 0 || m > n) return matches;
+
+        int i = 0, j = 0;          // i -> text, j -> pattern
+        while (i < n) {
+            if (text[i] == pattern[j]) { ++i; ++j; }
+            if (j == m) {                          // full match
+                matches.push_back(i - j);
+                j = lps[j - 1];                    // continue without backing up i
+            } else if (i < n && text[i] != pattern[j]) {
+                if (j != 0) j = lps[j - 1];   // fall back, retry same text char
+                else        ++i;              // no progress possible, advance text
             }
         }
-        
-        if (!found) {
-            cout << "No patterns found in the text.\n";
-        }
-        cout << "----------------------\n";
+        return matches;
     }
 };
 
+// ─── Demo helpers ───
+static void printMatches(const string& pattern, const string& text, const vector<int>& m) {
+    cout << "  text    : " << text << "\n";
+    cout << "  pattern : " << pattern << "\n";
+    if (m.empty()) { cout << "  result  : Not Found\n"; return; }
+    cout << "  found at: ";
+    for (size_t k = 0; k < m.size(); ++k) cout << m[k] << (k + 1 < m.size() ? ", " : "");
+    cout << "  (" << m.size() << " occurrence" << (m.size() == 1 ? "" : "s") << ")\n";
+}
+
+static void runCase(const string& label, const string& pattern, const string& text) {
+    cout << "[" << label << "]\n";
+    printMatches(pattern, text, KMP(pattern).search(text));
+    cout << "\n";
+}
+
 int main() {
-    // Text to search within
-    string text = "ABABDABACDABABCABAB";
-    
-    // Pattern to find
+    cout << "=========================== KMP String Search ===========================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Preprocess : O(m)         build the LPS array\n";
+    cout << "  Search     : O(n + m)     text pointer never moves backward\n";
+    cout << "  Space      : O(m)         LPS array\n";
+    cout << "  Notes      : LPS fallback is the whole trick — no re-scanning of text.\n\n";
+
+    cout << "[Demo] the LPS array is what KMP is teaching:\n";
     string pattern = "ABABCABAB";
-    
-    cout << "Text:    " << text << "\n";
-    cout << "Pattern: " << pattern << "\n\n";
-
-    // Initialize the KMP algorithm
     KMP kmp(pattern);
+    cout << "  pattern : " << pattern << "\n  LPS     : ";
+    for (int v : kmp.getLPS()) cout << v << " ";
+    cout << "\n";
+    string text = "ABABDABACDABABCABAB";
+    printMatches(pattern, text, kmp.search(text));
+    cout << "\n";
 
-    // Perform the search
-    kmp.search(text);
+    cout << "[Edge Cases]\n";
+    runCase("overlapping    ", "AA",   "AAAAA");          // 0,1,2,3
+    runCase("multiple       ", "AABA", "AABAACAADAABAABA");
+    runCase("absent         ", "XYZ",  "ABCDEFG");
+    runCase("pattern > text ", "ABCDEF", "ABC");
+    runCase("empty pattern  ", "",     "ABC");
+    runCase("single chars   ", "A",    "BANANA");
 
     return 0;
 }

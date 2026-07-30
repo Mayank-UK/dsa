@@ -8,73 +8,100 @@ using namespace std;
 //   contents are copied — amortized O(1) push_back. Shrinking is optional.
 // ─────────────────────────────────────────────────────────────────────────────
 
-class Vector {
+class Vector
+{
 private:
-    int* arr;
+    int *arr;
     int capacity;
     int length;
 
     // Double the buffer and copy. This is what makes growth amortized O(1).
-    void resizeArray(int oldCap) {
+    void resizeArray(int oldCap)
+    {
         capacity *= 2;
-        int* newArr = new int[capacity];
-        for (int i = 0; i < length; i++) newArr[i] = arr[i];
+        int *newArr = new int[capacity];
+        for (int i = 0; i < length; i++)
+            newArr[i] = arr[i];
         delete[] arr;
         arr = newArr;
-        cout << "    [resize] capacity " << oldCap << " -> " << capacity
-             << " (copied " << length << " elements)\n";
+        cout << "    [resize] capacity " << oldCap << " -> " << capacity << " (copied " << length << " elements)\n";
     }
 
 public:
-    Vector() {
+    Vector()
+    {
         capacity = 1;
         length = 0;
         arr = new int[capacity];
     }
 
-    void push_back(int value) {
-        if (length == capacity) resizeArray(capacity);
+    void push_back(int value)
+    {
+        if (length == capacity)
+            resizeArray(capacity);
         arr[length++] = value;
     }
 
-    void pop_back() {
-        if (isEmpty()) { cout << "  (vector empty)\n"; return; }
+    void pop_back()
+    {
+        if (isEmpty())
+        {
+            cout << "  (vector empty)\n";
+            return;
+        }
         length--;
     }
 
-    void insert(int index, int value) {
-        if (index < 0 || index > length) { cout << "  (invalid index)\n"; return; }
-        if (length == capacity) resizeArray(capacity);
-        for (int i = length; i > index; i--) arr[i] = arr[i - 1];
+    void insert(int index, int value)
+    {
+        if (index < 0 || index > length)
+        {
+            cout << "  (invalid index)\n";
+            return;
+        }
+        if (length == capacity)
+            resizeArray(capacity);
+        for (int i = length; i > index; i--)
+            arr[i] = arr[i - 1];
         arr[index] = value;
         length++;
     }
 
-    void erase(int index) {
-        if (index < 0 || index >= length) { cout << "  (invalid index)\n"; return; }
-        for (int i = index; i < length - 1; i++) arr[i] = arr[i + 1];
+    void erase(int index)
+    {
+        if (index < 0 || index >= length)
+        {
+            cout << "  (invalid index)\n";
+            return;
+        }
+        for (int i = index; i < length - 1; i++)
+            arr[i] = arr[i + 1];
         length--;
     }
 
-    int at(int index) const {
-        if (index < 0 || index >= length) throw out_of_range("Invalid Index");
+    int at(int index) const
+    {
+        if (index < 0 || index >= length)
+            throw out_of_range("Invalid Index");
         return arr[index];
     }
 
     int operator[](int index) const { return arr[index]; }
 
     int front() const { return arr[0]; }
-    int back()  const { return arr[length - 1]; }
-    int size()  const { return length; }
+    int back() const { return arr[length - 1]; }
+    int size() const { return length; }
     int getCapacity() const { return capacity; }
     bool isEmpty() const { return length == 0; }
 
     // Logical clear (keeps the buffer allocated — like std::vector's clear).
     void clear() { length = 0; }
 
-    void display() const {
+    void display() const
+    {
         cout << "  [ ";
-        for (int i = 0; i < length; i++) cout << arr[i] << " ";
+        for (int i = 0; i < length; i++)
+            cout << arr[i] << " ";
         cout << "]   (length " << length << " / capacity " << capacity << ")\n";
     }
 
@@ -83,7 +110,8 @@ public:
 
 // ─────────────────────────────── Demo ────────────────────────────────────────
 
-int main() {
+int main()
+{
 
     cout << "=============== Dynamic Array (vector) ===============\n";
 
@@ -91,7 +119,8 @@ int main() {
 
     // ── [Grow] amortized doubling ────────────────────────────────────────────
     cout << "\n[Grow] push_back 1..8 — watch capacity double 1->2->4->8\n";
-    for (int i = 1; i <= 8; i++) v.push_back(i);
+    for (int i = 1; i <= 8; i++)
+        v.push_back(i);
     v.display();
 
     // ── [Stats] ──────────────────────────────────────────────────────────────
@@ -114,9 +143,13 @@ int main() {
     // ── [Access] bounds-checked ──────────────────────────────────────────────
     cout << "\n[Access]\n";
     cout << "  at(0)  -> " << v.at(0) << "\n";
-    try {
-        cout << "  at(500)-> "; cout << v.at(500) << "\n";
-    } catch (const out_of_range& e) {
+    try
+    {
+        cout << "  at(500)-> ";
+        cout << v.at(500) << "\n";
+    }
+    catch (const out_of_range &e)
+    {
         cout << "(rejected: " << e.what() << ")\n";
     }
 

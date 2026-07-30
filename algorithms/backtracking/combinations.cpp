@@ -1,79 +1,70 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
 using namespace std;
 
+// Combinations of size k chosen from `elements`, via classic backtracking.
+// At each position we either include elements[i] and recurse forward, or skip it.
+// The `start` index forces forward progress so each subset is listed once.
 class Combinations {
-private:
-    // Core backtracking function
-    void backtrack(const vector<int>& elements, int k, int start, vector<int>& current_combo, vector<vector<int>>& result) {
-        // Base case: If the current combination has reached the desired size k
-        if (current_combo.size() == k) {
-            result.push_back(current_combo);
-            return;
-        }
-
-        // Iterate through the remaining elements starting from 'start'
-        for (int i = start; i < elements.size(); ++i) {
-            // 1. Choose: Add the current element to the combination
-            current_combo.push_back(elements[i]);
-
-            // 2. Explore: Move forward to the next elements (i + 1)
-            backtrack(elements, k, i + 1, current_combo, result);
-
-            // 3. Un-choose (Backtrack): Remove the last element to try the next one in the loop
-            current_combo.pop_back();
+    void backtrack(const vector<int>& elements, int k, int start,
+                   vector<int>& cur, vector<vector<int>>& result) {
+        if ((int)cur.size() == k) { result.push_back(cur); return; }
+        for (int i = start; i < (int)elements.size(); ++i) {
+            cur.push_back(elements[i]);        // choose
+            backtrack(elements, k, i + 1, cur, result);  // explore forward
+            cur.pop_back();                    // un-choose
         }
     }
-
 public:
-    // Public interface to generate combinations
     vector<vector<int>> generate(const vector<int>& elements, int k) {
         vector<vector<int>> result;
-        vector<int> current_combo;
-        
-        if (k <= 0 || k > elements.size()) {
-            cout << "Invalid combination size k.\n";
-            return result;
-        }
-
-        // Start the backtracking process from index 0
-        backtrack(elements, k, 0, current_combo, result);
-        
+        vector<int> cur;
+        if (k < 0 || k > (int)elements.size()) return result;  // invalid -> empty
+        backtrack(elements, k, 0, cur, result);
         return result;
     }
 };
 
-int main() {
-    // Set of elements to choose from
-    vector<int> elements = {1, 2, 3, 4, 5};
-    
-    // Number of elements to pick (k)
-    int k = 3;
-    
-    cout << "Elements: { ";
-    for (int num : elements) cout << num << " ";
-    cout << "}\n";
-    cout << "Choosing " << k << " elements:\n\n";
-
-    // Initialize the Combinations algorithm
-    Combinations combo;
-
-    // Generate all combinations
-    vector<vector<int>> result = combo.generate(elements, k);
-
-    // Print the results
-    cout << "--- Generated Combinations ---\n";
-    int count = 1;
-    for (const auto& combination : result) {
-        cout << count++ << ": [ ";
-        for (int num : combination) {
-            cout << num << " ";
-        }
+static void printCombos(const vector<vector<int>>& combos) {
+    int n = 1;
+    for (const auto& c : combos) {
+        cout << "    " << n++ << ": [ ";
+        for (int x : c) cout << x << " ";
         cout << "]\n";
     }
-    cout << "------------------------------\n";
-    cout << "Total combinations found: " << result.size() << "\n";
+}
+
+int main() {
+    cout << "================ Combinations ================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(C(n,k) * k)   C(n,k) outputs, each copied in O(k)\n";
+    cout << "  Space : O(k) recursion depth + O(C(n,k)*k) to store results\n";
+    cout << "  Note  : choose/explore/un-choose; forward-only index prevents duplicates\n\n";
+
+    cout << "[Demo]\n";
+    vector<int> elements = {1, 2, 3, 4, 5};
+    int k = 3;
+    cout << "  set = { ";
+    for (int x : elements) cout << x << " ";
+    cout << "},  k = " << k << "\n";
+    auto result = Combinations().generate(elements, k);
+    printCombos(result);
+    cout << "  total = " << result.size() << "  (C(" << elements.size()
+         << "," << k << ") = " << result.size() << ")\n\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  k = 0 (empty combination): count = "
+         << Combinations().generate({1, 2, 3}, 0).size() << "\n";
+    cout << "  k > n (impossible): count = "
+         << Combinations().generate({1, 2}, 5).size() << "\n";
+    cout << "  k = n (one combination, all elements):\n";
+    printCombos(Combinations().generate({1, 2, 3}, 3));
+    cout << "  empty set, k = 0: count = "
+         << Combinations().generate({}, 0).size() << "\n";
+    cout << "\n";
 
     return 0;
 }

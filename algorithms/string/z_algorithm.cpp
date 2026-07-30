@@ -4,108 +4,97 @@
 
 using namespace std;
 
+// Z-algorithm. Z[i] = length of the longest substring starting at i that is also
+// a prefix of the whole string. Computed in O(n) by maintaining the rightmost
+// matched segment [L, R] and reusing the mirrored prefix value. Pattern search
+// is just running Z over pattern + "$" + text and reporting where Z[i] == |pattern|.
+
 class ZAlgorithm {
 private:
-    // Core function to build the Z-array in O(N) time
-    vector<int> buildZArray(const string& str) {
-        int n = str.length();
+    static vector<int> buildZArray(const string& str) {
+        int n = (int)str.length();
         vector<int> Z(n, 0);
-        
-        // L and R represent the boundaries of the rightmost matched window
-        int L = 0, R = 0; 
-        
-        // Note: Z[0] is typically not well-defined or used, so we start at i = 1
-        for (int i = 1; i < n; i++) {
-            // Case 1: i is outside the current window. 
-            // We must calculate the Z-value naively by comparing characters.
-            if (i > R) {
-                L = R = i;
-                while (R < n && str[R - L] == str[R]) {
-                    R++;
-                }
-                Z[i] = R - L;
-                R--; // R is now the index of the last matching character
-            } 
-            // Case 2: i is inside the current window [L, R]
-            else {
-                // k is the corresponding index in the prefix
-                int k = i - L; 
-                
-                // If the previously computed Z-value at k does not stretch 
-                // beyond the right boundary R, we can safely copy it.
-                if (Z[k] < R - i + 1) {
-                    Z[i] = Z[k];
-                } 
-                // If it touches or crosses the right boundary R, we must 
-                // extend the window to the right starting from R.
-                else {
-                    L = i;
-                    while (R < n && str[R - L] == str[R]) {
-                        R++;
-                    }
-                    Z[i] = R - L;
-                    R--;
-                }
+        int L = 0, R = 0;                  // rightmost matched window [L, R)
+        for (int i = 1; i < n; ++i) {
+            if (i < R) {                   // inside the window: reuse mirror
+                Z[i] = min(R - i, Z[i - L]);
+            }
+            while (R < n && i + Z[i] < n && str[Z[i]] == str[i + Z[i]]) {
+                ++Z[i];                    // extend past the window if it matches
+            }
+            if (i + Z[i] > R) {            // window extended → update [L, R]
+                L = i;
+                R = i + Z[i];
             }
         }
         return Z;
     }
 
 public:
-    // Searches for the pattern in the text in O(N + M) time
-    void search(const string& pattern, const string& text) {
-        if (pattern.empty() || text.empty()) {
-            cout << "Pattern or text is empty.\n";
-            return;
-        }
+    // The Z-array of any string (Z[0] is conventionally the full length).
+    static vector<int> getZArray(const string& s) {
+        vector<int> Z = buildZArray(s);
+        if (!Z.empty()) Z[0] = (int)s.length();
+        return Z;
+    }
 
-        // Create the concatenated string: Pattern + Sentinel + Text
-        // The sentinel ensures the Z-value never exceeds the pattern's length
-        string concat = pattern + "$" + text;
-        
-        // Compute the Z-array for the concatenated string
+    // Returns every start index in `text` where `pattern` occurs.
+    static vector<int> search(const string& pattern, const string& text) {
+        vector<int> matches;
+        if (pattern.empty() || text.empty()) return matches;
+
+        string concat = pattern + "$" + text;   // '$' is a sentinel not in the alphabet
         vector<int> Z = buildZArray(concat);
-        
-        cout << "--- Search Results ---\n";
-        bool found = false;
-        int m = pattern.length();
-        
-        // Iterate through the Z-array looking for matches
-        for (int i = 0; i < Z.size(); i++) {
-            // If the Z-value equals the pattern length, we found a match
-            if (Z[i] == m) {
-                found = true;
-                
-                // Calculate the original index in the text:
-                // i is the current index in the concatenated string.
-                // Subtracting m (pattern length) and 1 (the '$' symbol) gives the real index.
-                int text_index = i - m - 1; 
-                cout << "Pattern '" << pattern << "' found starting at index " << text_index << "\n";
-            }
+        int m = (int)pattern.length();
+        for (int i = m + 1; i < (int)Z.size(); ++i) {
+            if (Z[i] == m) matches.push_back(i - m - 1);   // map back into text
         }
-        
-        if (!found) {
-            cout << "No patterns found in the text.\n";
-        }
-        cout << "----------------------\n";
+        return matches;
     }
 };
 
+// ─── Demo helpers ───
+static void printMatches(const string& pattern, const string& text, const vector<int>& m) {
+    cout << "  text    : " << text << "\n";
+    cout << "  pattern : " << pattern << "\n";
+    if (m.empty()) { cout << "  result  : Not Found\n"; return; }
+    cout << "  found at: ";
+    for (size_t k = 0; k < m.size(); ++k) cout << m[k] << (k + 1 < m.size() ? ", " : "");
+    cout << "  (" << m.size() << " occurrence" << (m.size() == 1 ? "" : "s") << ")\n";
+}
+
+static void runCase(const string& label, const string& pattern, const string& text) {
+    cout << "[" << label << "]\n";
+    printMatches(pattern, text, ZAlgorithm::search(pattern, text));
+    cout << "\n";
+}
+
 int main() {
-    // Text to search within
-    string text = "aabaacaadaabaaba";
-    
-    // Pattern to find
-    string pattern = "aaba";
-    
-    cout << "Text:    " << text << "\n";
-    cout << "Pattern: " << pattern << "\n\n";
+    cout << "======================== Z-Algorithm String Search ========================\n\n";
 
-    // Initialize the Z-Algorithm
-    ZAlgorithm z_algo;
+    cout << "[Complexity]\n";
+    cout << "  Z-array   : O(n)         each character is matched at most once\n";
+    cout << "  Search    : O(n + m)     one Z pass over pattern+text\n";
+    cout << "  Space     : O(n + m)\n";
+    cout << "  Notes     : Z[i] = longest prefix of the string that restarts at i.\n\n";
 
-    // Perform the search
-    z_algo.search(pattern, text);
+    cout << "[Demo] the Z-array itself is the lesson:\n";
+    string demo = "aabxaabxaab";
+    vector<int> Z = ZAlgorithm::getZArray(demo);
+    cout << "  string : " << demo << "\n  Z      : ";
+    for (int v : Z) cout << v << " ";
+    cout << "\n\n";
+
+    cout << "[Search]\n";
+    printMatches("aaba", "aabaacaadaabaaba", ZAlgorithm::search("aaba", "aabaacaadaabaaba"));
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    runCase("overlapping    ", "AA",   "AAAAA");
+    runCase("absent         ", "XYZ",  "ABCDEFG");
+    runCase("pattern > text ", "ABCDEF", "ABC");
+    runCase("empty pattern  ", "",     "ABC");
+    runCase("single chars   ", "A",    "BANANA");
 
     return 0;
 }

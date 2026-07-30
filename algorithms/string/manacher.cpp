@@ -5,99 +5,83 @@
 
 using namespace std;
 
+// Manacher's algorithm. Finds the longest palindromic substring in O(n) by
+// reusing previously computed radii: keep the palindrome [center, right] that
+// reaches furthest right, and when a new center i falls inside it, seed P[i]
+// from its mirror (clamped to the boundary) before expanding. Sentinels '^'
+// and '$' let the expansion stop itself without bounds checks.
+
+struct Palindrome {
+    string text;    // the palindrome substring
+    int    length;
+    int    start;   // start index in the ORIGINAL string
+};
+
 class Manacher {
 private:
-    // Helper to transform the string to handle even and odd lengths uniformly
-    // Example: "aba" -> "^#a#b#a#$"
-    // Example: "bb"  -> "^#b#b#$"
-    string preprocess(const string& s) {
-        if (s.empty()) return "^$";
-        
-        string ret = "^";
-        for (char c : s) {
-            ret += "#" + string(1, c);
-        }
-        ret += "#$";
-        return ret;
+    // "aba" -> "^#a#b#a#$" : interleave with '#' so even- and odd-length
+    // palindromes are handled uniformly, and add sentinels at both ends.
+    static string preprocess(const string& s) {
+        string t = "^";
+        for (char c : s) { t += '#'; t += c; }
+        t += "#$";
+        return t;
     }
 
 public:
-    // Finds and prints the longest palindromic substring
-    void findLongestPalindrome(const string& text) {
-        if (text.empty()) {
-            cout << "Empty string provided.\n";
-            return;
-        }
+    // Returns the longest palindromic substring of `s` (empty string → length 0).
+    static Palindrome longestPalindrome(const string& s) {
+        if (s.empty()) return {"", 0, -1};
 
-        // T is the preprocessed string with boundaries and separators
-        string T = preprocess(text);
-        int n = T.length();
-        
-        // P[i] stores the radius of the longest palindrome centered at i
-        vector<int> P(n, 0);
-        
-        int center = 0; // Center of the palindrome that reaches furthest to the right
-        int right = 0;  // Rightmost boundary of that palindrome
-        
-        int max_len = 0;      // Length of the absolute longest palindrome found
-        int center_index = 0; // Center index of the absolute longest palindrome
+        string T = preprocess(s);
+        int n = (int)T.length();
+        vector<int> P(n, 0);                 // P[i] = radius of palindrome centered at i
 
-        // We iterate from 1 to n-2 because 0 is '^' and n-1 is '$'
-        for (int i = 1; i < n - 1; i++) {
-            // Find the mirror of i around the current 'center'
+        int center = 0, right = 0;           // furthest-reaching palindrome so far
+        int maxLen = 0, maxCenter = 0;
+
+        for (int i = 1; i < n - 1; ++i) {
             int mirror = 2 * center - i;
+            if (i < right) P[i] = min(right - i, P[mirror]);   // seed from mirror
 
-            // If i is within the right boundary of the current furthest palindrome,
-            // we can copy the previously computed radius from its mirror.
-            // However, it cannot exceed the distance to the 'right' boundary.
-            if (i < right) {
-                P[i] = min(right - i, P[mirror]);
-            }
+            while (T[i + 1 + P[i]] == T[i - 1 - P[i]]) ++P[i]; // expand (sentinels stop it)
 
-            // Attempt to expand the palindrome centered at i
-            // The sentinels '^' and '$' guarantee we won't go out of bounds here
-            while (T[i + 1 + P[i]] == T[i - 1 - P[i]]) {
-                P[i]++;
-            }
-
-            // If the palindrome centered at i expands past 'right',
-            // adjust 'center' and 'right' to the new furthest-reaching palindrome.
-            if (i + P[i] > right) {
-                center = i;
-                right = i + P[i];
-            }
-
-            // Track the absolute longest palindrome seen so far
-            if (P[i] > max_len) {
-                max_len = P[i];
-                center_index = i;
-            }
+            if (i + P[i] > right) { center = i; right = i + P[i]; }
+            if (P[i] > maxLen)   { maxLen = P[i]; maxCenter = i; }
         }
 
-        // Extract the longest palindrome from the original string.
-        // The math maps the index from the preprocessed string T back to text.
-        int start_idx = (center_index - 1 - max_len) / 2;
-        string longest_palindrome = text.substr(start_idx, max_len);
-
-        cout << "--- Search Results ---\n";
-        cout << "Longest Palindromic Substring: '" << longest_palindrome << "'\n";
-        cout << "Length: " << max_len << "\n";
-        cout << "Starts at index: " << start_idx << " in the original string\n";
-        cout << "----------------------\n";
+        int start = (maxCenter - 1 - maxLen) / 2;             // map back to original
+        return { s.substr(start, maxLen), maxLen, start };
     }
 };
 
+// ─── Demo helpers ───
+static void runCase(const string& label, const string& s) {
+    Palindrome p = Manacher::longestPalindrome(s);
+    cout << "  " << label << " \"" << s << "\"\n";
+    if (p.length == 0) cout << "    -> (empty)\n\n";
+    else cout << "    -> \"" << p.text << "\"  length=" << p.length
+              << "  start=" << p.start << "\n\n";
+}
+
 int main() {
-    // String to search within
-    string text = "forgeeksskeegfor";
-    
-    cout << "Original Text: " << text << "\n\n";
+    cout << "====================== Manacher (Longest Palindrome) ======================\n\n";
 
-    // Initialize the Manacher algorithm class
-    Manacher manacher;
+    cout << "[Complexity]\n";
+    cout << "  Time   : O(n)        each center's expansion is amortized constant\n";
+    cout << "  Space  : O(n)        radius array + transformed string\n";
+    cout << "  Notes  : the '^'/'$' sentinels and '#' spacers unify odd/even cases.\n\n";
 
-    // Find the longest palindrome
-    manacher.findLongestPalindrome(text);
+    cout << "[Demo]\n";
+    runCase("classic even", "forgeeksskeegfor");   // "geeksskeeg"
+    runCase("classic odd ", "babad");               // "bab" or "aba"
+
+    cout << "[Edge Cases]\n";
+    runCase("empty          ", "");
+    runCase("single char    ", "a");
+    runCase("all same       ", "aaaa");
+    runCase("no repeat > 1  ", "abcdef");
+    runCase("palindrome at end", "xyzracecar");
 
     return 0;
 }

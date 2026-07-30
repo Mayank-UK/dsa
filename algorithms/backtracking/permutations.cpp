@@ -1,77 +1,64 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
+#include <string>
 
 using namespace std;
 
+// All permutations via in-place swapping (Heap's-style recursion).
+// Fix elements[start] by swapping each j >= start into that slot, recurse to
+// fix the next position, then swap back (un-choose) to restore order.
 class Permutations {
-private:
-    // Core backtracking function
     void backtrack(int start, vector<int>& elements, vector<vector<int>>& result) {
-        // Base case: If the starting index reaches the end of the array,
-        // we have formed a complete permutation.
-        if (start == elements.size()) {
-            result.push_back(elements);
-            return;
-        }
-
-        // Iterate through the array starting from the 'start' index
-        for (int i = start; i < elements.size(); ++i) {
-            // 1. Choose: Swap the current element with the 'start' element
-            // This locks elements[start] in place for this recursive branch.
-            swap(elements[start], elements[i]);
-
-            // 2. Explore: Recursively generate permutations for the remaining elements
-            backtrack(start + 1, elements, result);
-
-            // 3. Un-choose (Backtrack): Swap the elements back to restore the 
-            // original array state before moving to the next iteration.
-            swap(elements[start], elements[i]);
+        if (start == (int)elements.size()) { result.push_back(elements); return; }
+        for (int i = start; i < (int)elements.size(); ++i) {
+            swap(elements[start], elements[i]);              // choose
+            backtrack(start + 1, elements, result);          // explore
+            swap(elements[start], elements[i]);              // un-choose
         }
     }
-
 public:
-    // Public interface to generate permutations
-    vector<vector<int>> generate(vector<int> elements) {
+    vector<vector<int>> generate(vector<int> elements) {  // by value: swap in a copy
         vector<vector<int>> result;
-        
-        if (elements.empty()) {
-            return result;
-        }
-
-        // Start the backtracking process from index 0
+        if (elements.empty()) return result;
         backtrack(0, elements, result);
-        
         return result;
     }
 };
 
-int main() {
-    // Set of distinct elements
-    vector<int> elements = {1, 2, 3};
-    
-    cout << "Elements: { ";
-    for (int num : elements) cout << num << " ";
-    cout << "}\n\n";
-
-    // Initialize the Permutations algorithm
-    Permutations perm;
-
-    // Generate all permutations
-    vector<vector<int>> result = perm.generate(elements);
-
-    // Print the results
-    cout << "--- Generated Permutations ---\n";
-    int count = 1;
-    for (const auto& permutation : result) {
-        cout << count++ << ": [ ";
-        for (int num : permutation) {
-            cout << num << " ";
-        }
+static void printPerms(const vector<vector<int>>& perms) {
+    int n = 1;
+    for (const auto& p : perms) {
+        cout << "    " << n++ << ": [ ";
+        for (int x : p) cout << x << " ";
         cout << "]\n";
     }
-    cout << "------------------------------\n";
-    cout << "Total permutations found: " << result.size() << "\n";
+}
+
+int main() {
+    cout << "================ Permutations ================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(n * n!)   n! permutations, each copied in O(n)\n";
+    cout << "  Space : O(n) recursion depth + O(n*n!) to store results\n";
+    cout << "  Note  : in-place swap; backtracking restores order after each branch\n\n";
+
+    cout << "[Demo]\n";
+    vector<int> elements = {1, 2, 3};
+    cout << "  set = { ";
+    for (int x : elements) cout << x << " ";
+    cout << "}\n";
+    auto result = Permutations().generate(elements);
+    printPerms(result);
+    cout << "  total = " << result.size() << "  (= " << elements.size() << "! = "
+         << result.size() << ")\n\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  empty set: count = " << Permutations().generate({}).size() << "\n";
+    cout << "  single element:\n";
+    printPerms(Permutations().generate({7}));
+    cout << "  two elements:\n";
+    printPerms(Permutations().generate({4, 9}));
+    cout << "\n";
 
     return 0;
 }

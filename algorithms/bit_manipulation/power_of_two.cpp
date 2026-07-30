@@ -1,59 +1,58 @@
 #include <iostream>
 #include <bitset>
 #include <vector>
+#include <string>
 
 using namespace std;
 
+// Is n a power of two? A power of two has exactly ONE set bit (1, 10, 100, ...),
+// so clearing that lowest bit with n & (n-1) yields 0. Three ways to test it,
+// all O(1) — the lesson is recognizing the "single set bit" shape.
+
 class PowerOfTwo {
 public:
-    // Approach 1: Bitwise AND (The most optimal approach)
-    // Uses the property that x & (x - 1) clears the lowest set bit.
-    // If a number is a power of 2, it only has ONE set bit, so clearing it results in 0.
-    bool isPowerOfTwoBitwise(long long n) {
-        // n > 0 is crucial because 0 and negative numbers are not powers of 2
-        return (n > 0) && ((n & (n - 1)) == 0);
-    }
+    // n & (n-1) clears the lowest set bit; a power of two has only one, → 0.
+    static bool isBitwise(long long n) { return n > 0 && (n & (n - 1)) == 0; }
 
-    // Approach 2: Popcount (Using built-in compiler functions)
-    // A power of two must have exactly 1 set bit.
-    bool isPowerOfTwoPopcount(long long n) {
-        if (n <= 0) return false;
-        return __builtin_popcountll(n) == 1;
-    }
+    // A power of two has popcount exactly 1.
+    static bool isPopcount(long long n) { return n > 0 && __builtin_popcountll(n) == 1; }
 
-    // Approach 3: Iterative Division
-    // The standard mathematical way without bit manipulation.
-    bool isPowerOfTwoIterative(long long n) {
+    // Divide by 2 until odd; a power of two reduces to 1.
+    static bool isIterative(long long n) {
         if (n <= 0) return false;
-        while (n % 2 == 0) {
-            n /= 2;
-        }
+        while (n % 2 == 0) n /= 2;
         return n == 1;
     }
 };
 
+static void runCase(long long n) {
+    string bin = (n > 0 && n <= 65535) ? bitset<16>((unsigned long long)n).to_string() : "n/a";
+    if (bin != "n/a") { bin.erase(0, bin.find_first_not_of('0')); if (bin.empty()) bin = "0"; }
+    cout << "  n=" << n << "\t(bin " << bin << ")  bitwise=" << PowerOfTwo::isBitwise(n)
+         << "  popcount=" << PowerOfTwo::isPopcount(n)
+         << "  iterative=" << PowerOfTwo::isIterative(n) << "\n";
+}
+
 int main() {
-    PowerOfTwo checker;
-    
-    // Test cases covering standard powers, non-powers, and edge cases (0, negatives)
-    vector<long long> test_cases = {0, 1, 2, 8, 14, 1024, -8};
+    cout << "======================== Power of Two Check ========================\n\n";
 
-    cout << "--- Power of Two Checker ---\n";
-    for (long long n : test_cases) {
-        // Display the binary string for positive numbers up to 16 bits for visual proof
-        string binaryStr = "N/A (Negative or Zero)";
-        if (n > 0 && n <= 65535) {
-            binaryStr = bitset<16>(n).to_string();
-            binaryStr.erase(0, binaryStr.find_first_not_of('0')); // Strip leading zeros
-            if (binaryStr.empty()) binaryStr = "0";
-        }
+    cout << "[Complexity]\n";
+    cout << "  All three approaches : O(1)\n";
+    cout << "  Notes : a power of two has exactly one set bit; n=0 and negatives are NOT.\n\n";
 
-        cout << "Number: " << n << "\t (Binary: " << binaryStr << ")\n";
-        cout << "  -> Bitwise:   " << (checker.isPowerOfTwoBitwise(n) ? "True" : "False") << "\n";
-        cout << "  -> Popcount:  " << (checker.isPowerOfTwoPopcount(n) ? "True" : "False") << "\n";
-        cout << "  -> Iterative: " << (checker.isPowerOfTwoIterative(n) ? "True" : "False") << "\n\n";
-    }
-    cout << "----------------------------\n";
+    cout << "[Demo]\n";
+    runCase(1);       // 2^0
+    runCase(2);
+    runCase(8);
+    runCase(1024);
+    runCase(14);      // not a power
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    runCase(0);       // not a power of two
+    runCase(-8);      // negative — not a power of two
+    runCase((1LL << 40));   // 2^40, a large power
+    runCase((1LL << 40) + 1); // one past it — not
 
     return 0;
 }

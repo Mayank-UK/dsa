@@ -1,77 +1,78 @@
 #include <iostream>
 #include <vector>
 #include <stack>
+#include <string>
 
 using namespace std;
 
-// DFS helper function for topological sort with cycle detection
-bool dfsTopo(int u, const vector<vector<int>>& adj, vector<int>& visited, stack<int>& st) {
-    visited[u] = 1; // Mark as currently visiting (recursion stack)
-
+// DFS topological sort with cycle detection. Push a vertex onto the stack
+// only after all its descendants are processed; popping yields a valid order.
+bool dfsTopo(int u, const vector<vector<int>>& adj, vector<int>& state, stack<int>& st) {
+    state[u] = 1;  // visiting
     for (int v : adj[u]) {
-        if (visited[v] == 0) {
-            if (!dfsTopo(v, adj, visited, st)) return false;
-        } else if (visited[v] == 1) {
-            // Cycle detected
-            return false;
+        if (state[v] == 0) {
+            if (!dfsTopo(v, adj, state, st)) return false;
+        } else if (state[v] == 1) {
+            return false;  // cycle
         }
     }
-
-    visited[u] = 2; // Mark as fully processed
-    st.push(u);     // Push to stack after all descendants are visited
+    state[u] = 2;
+    st.push(u);
     return true;
 }
 
-// Function to perform topological sorting using DFS
+// Returns a topological order, or empty if the graph has a cycle.
 vector<int> topologicalSortDFS(int n, const vector<vector<int>>& adj) {
-    // 0 = unvisited, 1 = visiting, 2 = visited
-    vector<int> visited(n + 1, 0);
+    vector<int> state(n + 1, 0);
     stack<int> st;
 
-    for (int i = 1; i <= n; i++) {
-        if (visited[i] == 0) {
-            if (!dfsTopo(i, adj, visited, st)) {
-                cout << "Graph contains a cycle! Topological sort not possible.\n";
-                return {};
-            }
-        }
-    }
+    for (int i = 1; i <= n; i++)
+        if (state[i] == 0 && !dfsTopo(i, adj, state, st))
+            return {};  // cycle -> no valid order
 
-    // Extract elements from stack to form the topological order
-    vector<int> topoOrder;
-    while (!st.empty()) {
-        topoOrder.push_back(st.top());
-        st.pop();
-    }
+    vector<int> order;
+    while (!st.empty()) { order.push_back(st.top()); st.pop(); }
+    return order;
+}
 
-    return topoOrder;
+static void printOrder(const vector<int>& o) {
+    if (o.empty()) { cout << "  (none — cycle present)\n"; return; }
+    cout << "  ";
+    for (size_t i = 0; i < o.size(); i++) cout << o[i] << (i + 1 == o.size() ? "" : " -> ");
+    cout << "\n";
 }
 
 int main() {
-    int n = 6; // Number of vertices (1-indexed)
+    cout << "=============== Topological Sort (DFS) ===============\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(V + E)\n";
+    cout << "  Space : O(V)\n";
+    cout << "  Note  : directed ACYCLIC graph (DAG); rejects cyclic graphs\n\n";
+
+    cout << "[Demo]\n";
+    int n = 6;
     vector<vector<int>> adj(n + 1);
+    auto addEdge = [&](int u, int v) { adj[u].push_back(v); };
+    addEdge(6, 3); addEdge(6, 1); addEdge(5, 1); addEdge(5, 2);
+    addEdge(3, 4); addEdge(4, 2);
+    cout << "  DAG edges : 6->3,6->1,5->1,5->2,3->4,4->2\n";
+    cout << "  topo order: ";
+    printOrder(topologicalSortDFS(n, adj));
+    cout << "\n";
 
-    auto addEdge = [&](int u, int v) {
-        adj[u].push_back(v); // Directed edge from u to v
-    };
+    cout << "[Cases]  (cyclic graph -> rejected)\n";
+    vector<vector<int>> cyc(3 + 1);
+    auto ce = [&](int u, int v) { cyc[u].push_back(v); };
+    ce(1, 2); ce(2, 3); ce(3, 1);
+    cout << "  cycle 1->2->3->1 : ";
+    printOrder(topologicalSortDFS(3, cyc));
+    cout << "\n";
 
-    // Constructing a DAG (Directed Acyclic Graph)
-    addEdge(6, 3);
-    addEdge(6, 1);
-    addEdge(5, 1);
-    addEdge(5, 2);
-    addEdge(3, 4);
-    addEdge(4, 2);
-
-    vector<int> result = topologicalSortDFS(n, adj);
-
-    if (!result.empty()) {
-        cout << "Topological Order (DFS): ";
-        for (size_t i = 0; i < result.size(); i++) {
-            cout << result[i] << (i == result.size() - 1 ? "" : " -> ");
-        }
-        cout << "\n";
-    }
+    cout << "[Edge Cases]\n";
+    cout << "  single node       : "; printOrder(topologicalSortDFS(1, vector<vector<int>>(1 + 1)));
+    cout << "  no edges (n=4)   : "; printOrder(topologicalSortDFS(4, vector<vector<int>>(4 + 1)));
+    cout << "\n";
 
     return 0;
 }

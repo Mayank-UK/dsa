@@ -5,96 +5,73 @@
 
 using namespace std;
 
+// N-Queens via backtracking. Place one queen per row; for the current row try
+// each column and prune with three boolean arrays (column, and the two diagonal
+// families) so attack checks are O(1). The diagonal index is what lets a single
+// array cover a whole diagonal: diag1 = row - col (+offset), diag2 = row + col.
 class NQueens {
-private:
     int n;
-    vector<vector<string>> solutions;
-
-    // Core backtracking function
-    void backtrack(int row, vector<int>& queens, vector<bool>& cols, vector<bool>& diag1, vector<bool>& diag2) {
-        // Base case: If all N queens have been placed successfully
-        if (row == n) {
-            // Translate the column positions into a visual string board
+    void backtrack(int row, vector<int>& queens, vector<bool>& cols,
+                   vector<bool>& diag1, vector<bool>& diag2,
+                   vector<vector<string>>& solutions) {
+        if (row == n) {                       // all rows placed -> record board
             vector<string> board(n, string(n, '.'));
-            for (int i = 0; i < n; i++) {
-                board[i][queens[i]] = 'Q';
-            }
+            for (int i = 0; i < n; i++) board[i][queens[i]] = 'Q';
             solutions.push_back(board);
             return;
         }
-
-        // Try placing a queen in each column of the current row
         for (int col = 0; col < n; col++) {
-            // Calculate the unique indices for the main and anti-diagonals
-            int d1 = row - col + n - 1; // Top-left to bottom-right diagonal
-            int d2 = row + col;         // Top-right to bottom-left diagonal
-
-            // Check if the column or either diagonal is already under attack
+            int d1 = row - col + n - 1;       // main diagonal index
+            int d2 = row + col;               // anti-diagonal index
             if (!cols[col] && !diag1[d1] && !diag2[d2]) {
-                
-                // 1. Choose: Place the queen and mark the attack lines
-                cols[col] = diag1[d1] = diag2[d2] = true;
+                cols[col] = diag1[d1] = diag2[d2] = true;   // choose
                 queens.push_back(col);
-
-                // 2. Explore: Move to the next row
-                backtrack(row + 1, queens, cols, diag1, diag2);
-
-                // 3. Un-choose (Backtrack): Remove the queen and unmark the attack lines
-                queens.pop_back();
+                backtrack(row + 1, queens, cols, diag1, diag2, solutions);
+                queens.pop_back();                          // un-choose
                 cols[col] = diag1[d1] = diag2[d2] = false;
             }
         }
     }
-
 public:
-    // Constructor
-    NQueens(int size) {
+    vector<vector<string>> solve(int size) {
         n = size;
-    }
-
-    // Initiates the search
-    void solve() {
-        vector<int> queens; // Stores the column index of the queen for each row
-        
-        // Boolean arrays for O(1) attack checks
-        vector<bool> cols(n, false);
-        vector<bool> diag1(2 * n, false); 
-        vector<bool> diag2(2 * n, false);
-
-        // Start backtracking from row 0
-        backtrack(0, queens, cols, diag1, diag2);
-
-        cout << "--- Search Results ---\n";
-        cout << "Found " << solutions.size() << " valid configurations for " << n << " Queens.\n\n";
-
-        // Print up to the first 3 solutions to avoid flooding the console
-        int display_limit = min((int)solutions.size(), 3);
-        for (int i = 0; i < display_limit; i++) {
-            cout << "Solution " << i + 1 << ":\n";
-            for (const string& board_row : solutions[i]) {
-                cout << board_row << "\n";
-            }
-            cout << "\n";
-        }
-
-        if (solutions.size() > display_limit) {
-            cout << "... and " << solutions.size() - display_limit << " more solutions.\n";
-        }
-        cout << "----------------------\n";
+        vector<vector<string>> solutions;
+        if (n <= 0) return solutions;
+        vector<int> queens;
+        vector<bool> cols(n, false), diag1(2 * n, false), diag2(2 * n, false);
+        backtrack(0, queens, cols, diag1, diag2, solutions);
+        return solutions;
     }
 };
 
+static void printBoard(const vector<string>& board) {
+    for (const string& row : board) cout << "      " << row << "\n";
+}
+
 int main() {
-    // Standard chessboard size
-    int n = 8; 
-    
-    cout << "Calculating N-Queens for N = " << n << "...\n\n";
+    cout << "================= N-Queens =================\n\n";
 
-    // Initialize the N-Queens algorithm
-    NQueens nq(n);
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(N!)        pruned by O(1) column/diagonal attack checks\n";
+    cout << "  Space : O(N) recursion + O(N^2) per stored board\n";
+    cout << "  Note  : one queen per row; three boolean arrays make attack tests O(1)\n\n";
 
-    // Perform the search
-    nq.solve();
+    cout << "[Demo]\n";
+    int n = 4;
+    auto solutions = NQueens().solve(n);
+    cout << "  N = " << n << " -> " << solutions.size() << " solution(s)\n";
+    for (size_t i = 0; i < solutions.size(); i++) {
+        cout << "  solution " << (i + 1) << ":\n";
+        printBoard(solutions[i]);
+    }
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  N = 1 : " << NQueens().solve(1).size() << " solution (the trivial board)\n";
+    cout << "  N = 2 : " << NQueens().solve(2).size() << " (no solution)\n";
+    cout << "  N = 3 : " << NQueens().solve(3).size() << " (no solution)\n";
+    cout << "  N = 8 : " << NQueens().solve(8).size() << " solutions  (the classic count)\n";
+    cout << "\n";
 
     return 0;
 }

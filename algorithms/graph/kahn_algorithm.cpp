@@ -1,81 +1,73 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <string>
 
 using namespace std;
 
-// Function to find topological ordering using Kahn's Algorithm
+// Kahn's algorithm: repeatedly remove a 0-in-degree vertex, decrement its
+// neighbors' in-degrees, and enqueue new zeros. If not all vertices come out,
+// the graph has a cycle.
 vector<int> topologicalSort(int n, const vector<vector<int>>& adj) {
     vector<int> inDegree(n + 1, 0);
 
-    // Step 1: Compute in-degrees for all vertices
-    for (int u = 1; u <= n; u++) {
-        for (int v : adj[u]) {
-            inDegree[v]++;
-        }
-    }
+    for (int u = 1; u <= n; u++)
+        for (int v : adj[u]) inDegree[v]++;
 
-    // Step 2: Push all nodes with in-degree 0 into the queue
     queue<int> q;
-    for (int i = 1; i <= n; i++) {
-        if (inDegree[i] == 0) {
-            q.push(i);
-        }
-    }
+    for (int i = 1; i <= n; i++)
+        if (inDegree[i] == 0) q.push(i);
 
-    vector<int> topoOrder;
-
-    // Step 3: Process the queue
+    vector<int> order;
     while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-        topoOrder.push_back(u);
-
-        // Reduce in-degree of adjacent vertices
-        for (int v : adj[u]) {
-            inDegree[v]--;
-            if (inDegree[v] == 0) {
-                q.push(v);
-            }
-        }
+        int u = q.front(); q.pop();
+        order.push_back(u);
+        for (int v : adj[u])
+            if (--inDegree[v] == 0) q.push(v);
     }
 
-    // Step 4: Check for cycles (if topoOrder doesn't contain all vertices)
-    if (topoOrder.size() != n) {
-        cout << "Graph contains a cycle! Topological sort not possible.\n";
-        return {};
-    }
+    if ((int)order.size() != n) return {};  // cycle
+    return order;
+}
 
-    return topoOrder;
+static void printOrder(const vector<int>& o) {
+    if (o.empty()) { cout << "  (none — cycle present)\n"; return; }
+    cout << "  ";
+    for (size_t i = 0; i < o.size(); i++) cout << o[i] << (i + 1 == o.size() ? "" : " -> ");
+    cout << "\n";
 }
 
 int main() {
-    int n = 6; // Number of vertices (1-indexed)
+    cout << "============= Topological Sort (Kahn) =============\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(V + E)\n";
+    cout << "  Space : O(V)\n";
+    cout << "  Note  : BFS on in-degrees; cycle => fewer than V vertices emitted\n\n";
+
+    cout << "[Demo]\n";
+    int n = 6;
     vector<vector<int>> adj(n + 1);
+    auto addEdge = [&](int u, int v) { adj[u].push_back(v); };
+    addEdge(6, 3); addEdge(6, 1); addEdge(5, 1); addEdge(5, 2);
+    addEdge(3, 4); addEdge(4, 2);
+    cout << "  DAG edges : 6->3,6->1,5->1,5->2,3->4,4->2\n";
+    cout << "  topo order: ";
+    printOrder(topologicalSort(n, adj));
+    cout << "\n";
 
-    auto addEdge = [&](int u, int v) {
-        adj[u].push_back(v); // Directed edge from u to v
-    };
+    cout << "[Cases]  (cyclic graph -> rejected)\n";
+    vector<vector<int>> cyc(3 + 1);
+    auto ce = [&](int u, int v) { cyc[u].push_back(v); };
+    ce(1, 2); ce(2, 3); ce(3, 1);
+    cout << "  cycle 1->2->3->1 : ";
+    printOrder(topologicalSort(3, cyc));
+    cout << "\n";
 
-    // Constructing a DAG (Directed Acyclic Graph)
-    // 5 -> 2, 5 -> 0 (let's use 1 to 6)
-    // 6 -> 3, 6 -> 1, 5 -> 2, 5 -> 0(not valid here, 1 to 6)
-    addEdge(6, 3);
-    addEdge(6, 1);
-    addEdge(5, 1);
-    addEdge(5, 2);
-    addEdge(3, 4);
-    addEdge(4, 2);
-
-    vector<int> result = topologicalSort(n, adj);
-
-    if (!result.empty()) {
-        cout << "Topological Order: ";
-        for (int i = 0; i < result.size(); i++) {
-            cout << result[i] << (i == result.size() - 1 ? "" : " -> ");
-        }
-        cout << "\n";
-    }
+    cout << "[Edge Cases]\n";
+    cout << "  single node     : "; printOrder(topologicalSort(1, vector<vector<int>>(1 + 1)));
+    cout << "  no edges (n=4) : "; printOrder(topologicalSort(4, vector<vector<int>>(4 + 1)));
+    cout << "\n";
 
     return 0;
 }

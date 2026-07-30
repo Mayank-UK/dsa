@@ -181,4 +181,94 @@
                     ------B+ tree
                     ------Red black tree
 
+                    
+-Edge case framework (ESTBMDISMP)
+    --Edge cases are unusual or boundary conditions where an algorithm is more likely to fail. Instead of waiting for bugs to reveal them, systematically verify each category below
+    --Empty input
+        ---No data exists
+        ---Examples
+            ----Empty array
+            ----Empty string
+            ----Empty linked list
+            ----Null pointer
+    --Smallest input
+        ---Test the minimum valid input
+        ---Examples
+            ----Single element array
+            ----Single node linked list
+            ----Single character string
+    --Two elements
+        ---Many algorithms fail with exactly two elements
+        ---Examples
+            ----Already sorted
+            ----Reverse sorted
+            ----Equal values
+    --Boundary positions
+        ---Operations performed at the beginning or end of a data structure
+        ---Examples
+            ----Insert at index 0
+            ----Insert at last index
+            ----Delete first element
+            ----Delete last element
+            ----Insert before head
+            ----Insert after tail
+            ----Delete head
+            ----Delete tail
+    --Maximum limits
+        ---Test the largest valid input and extreme values
+        ---Examples
+            ----INT_MAX
+            ----INT_MIN
+            ----Full capacity
+            ----Maximum number of nodes
+        ---Check for
+            ----Overflow
+            ----Stack overflow
+            ----Memory issues
+    --Duplicate values
+        ---Ensure repeated values do not break the algorithm
+        ---Examples
+            ----All values identical
+            ----Multiple duplicate values
+    --Invalid input
+        ---Provide values outside the valid range
+        ---Examples
+            ----Negative index
+            ----Index greater than size
+            ----Null pointer
+        ---Decide whether to reject, ignore or report the error
+    --State transitions
+        ---Verify every change in the state of the data structure
+        ---Examples
+            ----Empty -> One element
+            ----One element -> Multiple elements
+            ----Multiple elements -> One element
+            ----One element -> Empty
+    --Metadata updates
+        ---Verify that all auxiliary information remains correct
+        ---Examples
+            ----Length or size
+            ----Capacity
+            ----Head pointer
+            ----Tail pointer
+            ----Height
+            ----Parent pointer
+            ----Balance factor
+    --Pointer relationships
+        ---After modifying pointers, ensure every remaining pointer is still valid
+        ---Examples
+            ----Deleting a node reconnects previous and next nodes correctly
+            ----No dangling pointers
+            ----No broken links
+            ----No unintended cycles
+    --Invariant checking
+        ---An invariant is a condition that must always remain true before and after every operation
+        ---Examples
+            ----0 <= length <= capacity
+            ----Array pointer is not null
+            ----If size == 0 then head == nullptr and tail == nullptr
+            ----If size > 0 then head != nullptr and tail != nullptr
+            ----tail->next == nullptr
+        ---After every operation, verify that every invariant still holds
+
 </pre>

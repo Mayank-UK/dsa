@@ -3,96 +3,90 @@
 
 using namespace std;
 
-// Structure to represent a 2D point
-struct Point {
-    int x;
-    int y;
-};
+// ============================================================
+// Segment Intersection — do two segments cross? Two segments intersect iff
+// each segment STRADDLES the line through the other, i.e. their endpoints sit
+// on opposite sides (detected by orientation.cpp's cross product changing
+// sign). Collinear pairs are a special case: they need a bounding-box check
+// (onSegment) to see whether they actually overlap. Covers both PROPER crossings
+// and improper ones (shared endpoint, T-junction, collinear overlap).
+// ============================================================
+struct Point { int x, y; };
 
-// Given three collinear points p, q, r, the function checks if
-// point q lies on the line segment 'pr'
-bool onSegment(Point p, Point q, Point r) {
-    if (q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) &&
-        q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y)) {
-        return true;
-    }
-    return false;
+// Given collinear p, q, r: is q within the bounding box of segment pr?
+static bool onSegment(Point p, Point q, Point r) {
+    return q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) &&
+           q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y);
 }
 
-// To find orientation of ordered triplet (p, q, r).
-// Returns:
-// 0 --> p, q and r are collinear
-// 1 --> Clockwise
-// 2 --> Counterclockwise
-int orientation(Point p, Point q, Point r) {
-    // Cross product logic
+// 0 = Collinear, 1 = Clockwise, 2 = Counterclockwise
+static int orientation(Point p, Point q, Point r) {
     int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-    
-    if (val == 0) return 0;  // Collinear
-    return (val > 0) ? 1 : 2; // Clockwise or Counterclockwise
+    if (val == 0) return 0;
+    return (val > 0) ? 1 : 2;
 }
 
-// The main function that returns true if line segment 'p1q1'
-// and 'p2q2' intersect.
-bool doIntersect(Point p1, Point q1, Point p2, Point q2) {
-    // Find the four orientations needed for general and special cases
+// Do segments p1q1 and p2q2 intersect (proper or improper)?
+static bool doIntersect(Point p1, Point q1, Point p2, Point q2) {
     int o1 = orientation(p1, q1, p2);
     int o2 = orientation(p1, q1, q2);
     int o3 = orientation(p2, q2, p1);
     int o4 = orientation(p2, q2, q1);
 
-    // General case:
-    // If o1 and o2 are different AND o3 and o4 are different
-    if (o1 != o2 && o3 != o4) {
-        return true;
-    }
+    // General case: each straddles the other's line.
+    if (o1 != o2 && o3 != o4) return true;
 
-    // Special Cases (Collinear and overlapping):
-    // p1, q1 and p2 are collinear and p2 lies on segment p1q1
+    // Special cases: collinear + an endpoint lying on the other segment.
     if (o1 == 0 && onSegment(p1, p2, q1)) return true;
-
-    // p1, q1 and q2 are collinear and q2 lies on segment p1q1
     if (o2 == 0 && onSegment(p1, q2, q1)) return true;
-
-    // p2, q2 and p1 are collinear and p1 lies on segment p2q2
     if (o3 == 0 && onSegment(p2, p1, q2)) return true;
-
-    // p2, q2 and q1 are collinear and q1 lies on segment p2q2
     if (o4 == 0 && onSegment(p2, q1, q2)) return true;
 
-    return false; // Doesn't fall into any of the above cases
+    return false;
 }
 
+static void runCase(const string& label, Point p1, Point q1, Point p2, Point q2, bool expect) {
+    bool hit = doIntersect(p1, q1, p2, q2);
+    cout << "  " << label << " -> " << (hit ? "INTERSECT" : "no intersection")
+         << "  [" << (hit == expect ? "ok" : "WRONG") << "]" << endl;
+}
+
+// ============================================================
 int main() {
-    // Segment 1: (1, 1) to (10, 1)
-    Point p1 = {1, 1}, q1 = {10, 1};
-    // Segment 2: (1, 2) to (10, 2)
-    Point p2 = {1, 2}, q2 = {10, 2};
 
-    if (doIntersect(p1, q1, p2, q2))
-        cout << "Segments 1 and 2 intersect.\n";
-    else
-        cout << "Segments 1 and 2 do not intersect.\n";
+    cout << "==================== Segment Intersection ====================" << endl;
 
-    // Segment 3: (10, 0) to (0, 10)
-    Point p3 = {10, 0}, q3 = {0, 10};
-    // Segment 4: (0, 0) to (10, 10)
-    Point p4 = {0, 0}, q4 = {10, 10};
+    cout << endl;
+    cout << "[Complexity]" << endl;
+    cout << "  time  : O(1)   (four orientation tests + up to four bbox checks)" << endl;
+    cout << "  space : O(1)" << endl;
+    cout << "  Notes : exact integer arithmetic; handles proper AND improper crossings." << endl;
 
-    if (doIntersect(p3, q3, p4, q4))
-        cout << "Segments 3 and 4 intersect.\n";
-    else
-        cout << "Segments 3 and 4 do not intersect.\n";
+    cout << endl;
+    cout << "[Demo]" << endl;
+    runCase("parallel horizontal lines (no)",
+            {1, 1}, {10, 1}, {1, 2}, {10, 2}, false);
+    runCase("crossing diagonals (yes)",
+            {10, 0}, {0, 10}, {0, 0}, {10, 10}, true);
+    runCase("collinear but disjoint (no)",
+            {-5, -5}, {0, 0}, {1, 1}, {10, 10}, false);
 
-    // Segment 5: (-5, -5) to (0, 0)
-    Point p5 = {-5, -5}, q5 = {0, 0};
-    // Segment 6: (1, 1) to (10, 10)
-    Point p6 = {1, 1}, q6 = {10, 10};
+    cout << endl;
+    cout << "[Edge Cases]" << endl;
+    runCase("collinear, overlapping ranges (yes)",
+            {0, 0}, {5, 5}, {3, 3}, {8, 8}, true);
+    runCase("shared endpoint (yes, improper)",
+            {0, 0}, {2, 2}, {2, 2}, {4, 0}, true);
+    runCase("T-junction: endpoint touches the other mid-segment (yes)",
+            {0, 0}, {4, 0}, {2, 0}, {2, 4}, true);
+    runCase("just-touching at a corner, L-shapes (no)",
+            {0, 0}, {0, 4}, {4, 0}, {4, 4}, false);
 
-    if (doIntersect(p5, q5, p6, q6))
-        cout << "Segments 5 and 6 intersect.\n";
-    else
-        cout << "Segments 5 and 6 do not intersect.\n";
+    cout << endl;
+    cout << "[Note]  This tests WHETHER segments cross, not WHERE. Finding the actual" << endl;
+    cout << "       intersection point needs the parametric line solve; finding ALL" << endl;
+    cout << "       intersections among many segments is the Bentley-Ottmann sweep" << endl;
+    cout << "       line — see sweep_line.cpp." << endl;
 
     return 0;
 }

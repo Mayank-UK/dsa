@@ -1,102 +1,81 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <string>
 
 using namespace std;
 
-// Size of the chessboard. 
-// Set to 5 for instant backtracking execution.
-const int N = 5; 
-
+// Knight's Tour via backtracking. From the current square try each of the 8
+// knight moves; recurse until all N*N squares are numbered. A square is safe if
+// it is on the board and unvisited. Plain backtracking (no Warnsdorff heuristic).
 class KnightTour {
-private:
-    int board[N][N];
+    int N;
+    vector<vector<int>> board;
+    // The 8 L-shaped moves, paired (dx[i], dy[i]).
+    int dx[8] = { 2, 1, -1, -2, -2, -1,  1,  2 };
+    int dy[8] = { 1, 2,  2,  1, -1, -2, -2, -1 };
 
-    // These arrays define the 8 possible movements for a knight in chess.
-    // Pairing xMove[i] and yMove[i] gives one valid directional jump.
-    int xMove[8] = { 2, 1, -1, -2, -2, -1,  1,  2 };
-    int yMove[8] = { 1, 2,  2,  1, -1, -2, -2, -1 };
-
-    // Utility function to check if i,j are valid indexes for an N*N chessboard
     bool isSafe(int x, int y) {
-        return (x >= 0 && x < N && y >= 0 && y < N && board[x][y] == -1);
+        return x >= 0 && x < N && y >= 0 && y < N && board[x][y] == -1;
     }
-
-    // A recursive utility function to solve the Knight Tour problem
-    bool solveKTUtil(int x, int y, int move_count) {
-        // Base case: If all squares are visited, the tour is complete
-        if (move_count == N * N) {
-            return true;
-        }
-
-        // Try all 8 possible next moves for the knight from the current coordinate
+    bool solve(int x, int y, int moveCount) {
+        if (moveCount == N * N) return true;     // every square visited
         for (int k = 0; k < 8; k++) {
-            int next_x = x + xMove[k];
-            int next_y = y + yMove[k];
-
-            if (isSafe(next_x, next_y)) {
-                // 1. Choose: Record the move sequence number on the board
-                board[next_x][next_y] = move_count;
-
-                // 2. Explore: Recurse to see if this choice leads to a solution
-                if (solveKTUtil(next_x, next_y, move_count + 1)) {
-                    return true;
-                }
-
-                // 3. Un-choose (Backtrack): The previous choice resulted in a dead end.
-                // Reset the square and try the next move in the loop.
-                board[next_x][next_y] = -1;
+            int nx = x + dx[k], ny = y + dy[k];
+            if (isSafe(nx, ny)) {
+                board[nx][ny] = moveCount;       // choose
+                if (solve(nx, ny, moveCount + 1)) return true;
+                board[nx][ny] = -1;              // un-choose
             }
         }
-
-        // If no move from this square leads to a solution, return false
         return false;
     }
-
 public:
-    // Initializes the board and begins the tour
-    void solve() {
-        // Initialize all squares as unvisited (-1)
-        for (int x = 0; x < N; x++) {
-            for (int y = 0; y < N; y++) {
-                board[x][y] = -1;
-            }
-        }
-
-        // Place the Knight at the starting position (0, 0)
-        // Step 0 is the starting point
-        board[0][0] = 0; 
-
-        cout << "--- Search Results ---\n";
-        cout << "Calculating Knight's Tour for a " << N << "x" << N << " board...\n\n";
-
-        // Start the recursive backtracking from step 1
-        if (!solveKTUtil(0, 0, 1)) {
-            cout << "Solution does not exist for this board size and starting position.\n";
-        } else {
-            printSolution();
-        }
-        cout << "----------------------\n";
-    }
-
-    // Prints the final visited sequence matrix
-    void printSolution() {
-        for (int x = 0; x < N; x++) {
-            for (int y = 0; y < N; y++) {
-                // Using setw to align the grid neatly
-                cout << setw(3) << board[x][y] << " ";
-            }
-            cout << "\n";
-        }
+    // Returns the move-numbered board, or empty if no tour from (0,0).
+    vector<vector<int>> solveFrom(int size, int startX, int startY) {
+        N = size;
+        board.assign(N, vector<int>(N, -1));     // -1 == unvisited
+        if (N <= 0) return board;
+        board[startX][startY] = 0;               // start at step 0
+        if (!solve(startX, startY, 1)) return {};  // no complete tour
+        return board;
     }
 };
 
-int main() {
-    // Initialize the Knight Tour algorithm
-    KnightTour kt;
+static void printBoard(const vector<vector<int>>& board) {
+    for (const auto& row : board) {
+        cout << "    ";
+        for (int v : row) cout << setw(3) << v << " ";
+        cout << "\n";
+    }
+}
 
-    // Perform the search
-    kt.solve();
+int main() {
+    cout << "================= Knight's Tour =================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(8^(N^2)) worst case   (8 moves per square)\n";
+    cout << "  Space : O(N^2) board + recursion depth O(N^2)\n";
+    cout << "  Note  : plain backtracking (no Warnsdorff); feasible for small N\n\n";
+
+    cout << "[Demo]\n";
+    int n = 5;
+    cout << "  " << n << "x" << n << " board, start = (0,0)\n";
+    auto board = KnightTour().solveFrom(n, 0, 0);
+    if (board.empty()) {
+        cout << "  No complete tour exists.\n";
+    } else {
+        cout << "  move numbers (0 = start, " << (n * n - 1) << " = last):\n";
+        printBoard(board);
+    }
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  N = 1 (single square, trivial tour):\n";
+    printBoard(KnightTour().solveFrom(1, 0, 0));
+    cout << "  N = 3 (no closed-or-open tour from corner): "
+         << (KnightTour().solveFrom(3, 0, 0).empty() ? "No tour\n" : "found\n");
+    cout << "\n";
 
     return 0;
 }

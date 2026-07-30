@@ -1,61 +1,62 @@
 #include <iostream>
 #include <bitset>
+#include <string>
 
 using namespace std;
 
+// Population count (popcount): the number of 1-bits in an integer's binary
+// representation. Three approaches of decreasing constant factor — the lesson is
+// that Brian Kernighan's n & (n-1) trick clears the lowest SET bit, so the loop
+// runs exactly popcount(n) times instead of all bit-width times.
+
 class SetBitsCounter {
 public:
-    // Approach 1: Simple Shift and AND
-    // Checks every single bit from right to left.
-    int countSimple(int n) {
+    // Walk every bit position. O(bits) — visits 0-bits too.
+    static int countSimple(unsigned n) {
         int count = 0;
-        while (n > 0) {
-            // Check if the least significant bit is 1
-            count += (n & 1);
-            // Shift right by 1 to process the next bit
-            n >>= 1;
-        }
+        while (n > 0) { count += (n & 1); n >>= 1; }
         return count;
     }
 
-    // Approach 2: Brian Kernighan's Algorithm
-    // Skips the 0 bits and only processes the 1 bits.
-    int countKernighan(int n) {
+    // Brian Kernighan: drop the lowest set bit each iteration. O(set bits).
+    static int countKernighan(unsigned n) {
         int count = 0;
-        while (n > 0) {
-            // n & (n - 1) always drops the lowest set bit of n
-            n = n & (n - 1); 
-            count++;
-        }
+        while (n > 0) { n &= (n - 1); ++count; }
         return count;
     }
 
-    // Approach 3: Compiler Built-in (GCC/Clang)
-    // The most efficient method for competitive programming.
-    int countBuiltin(int n) {
-        // Returns the number of 1-bits in an integer.
-        // For long long, use __builtin_popcountll(n)
-        return __builtin_popcount(n); 
-    }
+    // Hardware/Compiler intrinsic — usually a single POPCNT instruction.
+    static int countBuiltin(unsigned n) { return __builtin_popcount(n); }
 };
 
+static void runNum(unsigned n) {
+    string b = bitset<16>(n).to_string();
+    b.erase(0, b.find_first_not_of('0'));          // strip leading zeros
+    if (b.empty()) b = "0";
+    cout << "  " << n << "\t(bin " << b << ")  simple=" << SetBitsCounter::countSimple(n)
+         << "  kernighan=" << SetBitsCounter::countKernighan(n)
+         << "  builtin=" << SetBitsCounter::countBuiltin(n) << "\n";
+}
+
 int main() {
-    int numbers[] = {9, 15, 128, 9999};
-    SetBitsCounter counter;
+    cout << "========================= Count Set Bits =========================\n\n";
 
-    cout << "--- Counting Set Bits ---\n";
-    for (int n : numbers) {
-        // Using std::bitset just to display the binary string for visual proof
-        string binaryStr = bitset<16>(n).to_string();
-        // Strip leading zeros for a cleaner output
-        binaryStr.erase(0, binaryStr.find_first_not_of('0')); 
+    cout << "[Complexity]\n";
+    cout << "  Simple      : O(bits)            visits every bit position\n";
+    cout << "  Kernighan   : O(set bits)        n & (n-1) clears the lowest set bit\n";
+    cout << "  __builtin   : O(1) / 1 instruction  (hardware POPCNT)\n\n";
 
-        cout << "Number: " << n << "\t (Binary: " << binaryStr << ")\n";
-        cout << "  -> Simple:    " << counter.countSimple(n) << "\n";
-        cout << "  -> Kernighan: " << counter.countKernighan(n) << "\n";
-        cout << "  -> Built-in:  " << counter.countBuiltin(n) << "\n\n";
-    }
-    cout << "-------------------------\n";
+    cout << "[Demo]\n";
+    runNum(9);       // 1001 → 2
+    runNum(15);      // 1111 → 4
+    runNum(128);     // 10000000 → 1
+    runNum(9999);
+
+    cout << "\n[Edge Cases]\n";
+    cout << "  0           -> " << SetBitsCounter::countBuiltin(0) << " (no bits set)\n";
+    cout << "  1           -> " << SetBitsCounter::countBuiltin(1) << " (only LSB)\n";
+    cout << "  65535       -> " << SetBitsCounter::countBuiltin(65535) << " (16 ones)\n";
+    cout << "  UINT_MAX    -> " << SetBitsCounter::countBuiltin(~0u) << " (all 32 bits)\n";
 
     return 0;
 }

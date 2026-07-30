@@ -1,54 +1,69 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
 using namespace std;
 
+// Gray code. A Gray code of n bits lists all 2^n values so that CONSECUTIVE
+// values differ in exactly one bit (and the last wraps to the first). The
+// reflected binary formula  gray(i) = i ^ (i >> 1)  builds the canonical one in
+// index order — used in K-maps, rotary encoders, and error-minimizing search.
+
 class GrayCode {
 public:
-    // Generates the sequence of Gray codes for n bits
-    vector<int> generate(int n) {
-        vector<int> result;
-        
-        // The total number of codes for n bits is 2^n
-        int num_codes = 1 << n;
-        
-        for (int i = 0; i < num_codes; ++i) {
-            // Standard formula to convert a binary number 'i' to its Gray code:
-            // Right shift 'i' by 1 and XOR it with the original 'i'
-            int gray = i ^ (i >> 1);
-            result.push_back(gray);
-        }
-        
-        return result;
-    }
-    
-    // Helper function to print the integer in a padded binary format
-    void printBinary(int val, int bits) {
-        for (int i = bits - 1; i >= 0; --i) {
-            cout << (((1 << i) & val) != 0 ? "1" : "0");
-        }
+    // The 2^n Gray-code values, in order, for n bits.
+    static vector<int> generate(int n) {
+        int total = 1 << n;
+        vector<int> codes;
+        codes.reserve(total);
+        for (int i = 0; i < total; ++i)
+            codes.push_back(i ^ (i >> 1));    // binary → Gray
+        return codes;
     }
 };
 
-int main() {
-    GrayCode gc;
-    
-    // Test for a 3-bit Gray Code sequence
-    int n = 3;
-    vector<int> sequence = gc.generate(n);
-    
-    cout << "--- " << n << "-Bit Gray Code Sequence ---\n";
-    cout << "Index\tBinary\tGray Code (Binary)\tGray Code (Int)\n";
-    cout << "-------------------------------------------------------\n";
-    
-    for (int i = 0; i < sequence.size(); ++i) {
-        cout << i << "\t";
-        gc.printBinary(i, n);
-        cout << "\t";
-        gc.printBinary(sequence[i], n);
-        cout << "\t\t\t" << sequence[i] << "\n";
+// ─── Demo helpers ───
+static string binStr(int val, int bits) {
+    string s;
+    for (int b = bits - 1; b >= 0; --b) s += ((val >> b) & 1 ? '1' : '0');
+    return s;
+}
+
+// Verify the defining property: each adjacent pair (and the wrap-around) differs
+// in exactly one bit. Returns true iff the sequence is a valid cyclic Gray code.
+static bool verifyProperty(const vector<int>& codes) {
+    int n = (int)codes.size();
+    for (int i = 0; i < n; ++i) {
+        int diff = codes[i] ^ codes[(i + 1) % n];   // XOR = bits that differ
+        if (diff == 0 || (diff & (diff - 1)) != 0)  // not exactly one set bit
+            return false;
     }
-    cout << "-------------------------------------------------------\n";
+    return true;
+}
+
+int main() {
+    cout << "============================ Gray Code ============================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Generate 2^n codes : O(2^n) time and space\n";
+    cout << "  Notes  : gray(i) = i ^ (i >> 1); consecutive codes differ in ONE bit.\n\n";
+
+    int n = 3;
+    vector<int> codes = GrayCode::generate(n);
+    cout << "[Demo] " << n << "-bit Gray code:\n";
+    cout << "  i   binary   gray\n";
+    for (int i = 0; i < (int)codes.size(); ++i)
+        cout << "  " << i << "   " << binStr(i, n) << "     " << binStr(codes[i], n) << "\n";
+    cout << "  Adjacent differ by exactly one bit : "
+         << (verifyProperty(codes) ? "Yes" : "No") << "\n\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  n = 0 -> { " ;
+    { vector<int> z = GrayCode::generate(0); for (int v : z) cout << v << " "; cout << "} (single value)\n"; }
+    cout << "  n = 1 -> { ";
+    { vector<int> o = GrayCode::generate(1); for (int v : o) cout << v << " "; cout << "} (0,1)\n"; }
+    cout << "  n = 4 still valid : "
+         << (verifyProperty(GrayCode::generate(4)) ? "Yes" : "No") << "\n";
 
     return 0;
 }

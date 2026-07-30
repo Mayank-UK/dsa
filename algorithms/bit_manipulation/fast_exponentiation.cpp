@@ -2,69 +2,59 @@
 
 using namespace std;
 
+// Binary exponentiation (exponentiation by squaring). To compute base^exp, walk
+// the bits of exp: square the base each step, and whenever the current bit is 1
+// fold it into the result. Only O(log exp) multiplications instead of exp-1.
+// The same idea underlies modular exponentiation — see math/modular_exponentiation.cpp
+// (this file shows the un-modded form plus a plain-overflow guarded modular variant).
+
 class FastMath {
 public:
-    // Standard Binary Exponentiation
-    // Computes base^exp in O(log N) time
-    long long power(long long base, long long exp) {
+    // base^exp (exact, but overflows for large results — keep exp modest).
+    static long long power(long long base, long long exp) {
         long long result = 1;
-        
         while (exp > 0) {
-            // If the current lowest bit of the exponent is 1 (odd)
-            // Multiply the current base value into our result
-            if (exp & 1) { 
-                result *= base;
-            }
-            
-            // Square the base for the next bit position
-            base *= base;
-            
-            // Shift the exponent right by 1 (equivalent to exp / 2)
-            exp >>= 1; 
+            if (exp & 1) result *= base;   // odd bit → multiply
+            base *= base;                   // square for the next bit
+            exp >>= 1;
         }
-        
         return result;
     }
 
-    // Modular Exponentiation
-    // Computes (base^exp) % mod to prevent overflow
-    long long modularPower(long long base, long long exp, long long mod) {
+    // (base^exp) % mod — uses __int128 so a*b mod m is exact for 64-bit m.
+    static long long modularPower(long long base, long long exp, long long mod) {
+        if (mod == 1) return 0;
         long long result = 1;
-        
-        // Handle cases where the initial base is larger than the mod
-        base = base % mod; 
-        
+        base %= mod;
         while (exp > 0) {
-            // If exp is odd, multiply and immediately take modulo
-            if (exp & 1) {
-                result = (result * base) % mod;
-            }
-            
-            // Square the base and take modulo
-            base = (base * base) % mod;
-            
+            if (exp & 1) result = (__int128)result * base % mod;
+            base = (__int128)base * base % mod;
             exp >>= 1;
         }
-        
         return result;
     }
 };
 
 int main() {
-    FastMath math;
+    cout << "===================== Fast Exponentiation =====================\n\n";
 
-    cout << "--- Standard Fast Exponentiation ---\n";
-    long long b1 = 3, e1 = 13;
-    cout << b1 << "^" << e1 << " = " << math.power(b1, e1) << "\n\n";
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(log exp) multiplications\n";
+    cout << "  Space : O(1)\n";
+    cout << "  Notes : square-and-multiply; the modular form (math/modular_exponentiation.cpp)\n";
+    cout << "          is the same loop with % after every multiply to bound magnitude.\n\n";
 
-    cout << "--- Modular Exponentiation ---\n";
-    // In competitive programming, 10^9 + 7 is a standard large prime modulo
-    long long b2 = 2, e2 = 1000000000; // 2^1 billion
-    long long mod = 1000000007; 
-    
-    cout << b2 << "^" << e2 << " % " << mod << " = " 
-         << math.modularPower(b2, e2, mod) << "\n";
-    cout << "------------------------------------\n";
+    cout << "[Demo]\n";
+    cout << "  3^13      = " << FastMath::power(3, 13) << "   (expect 1594323)\n";
+    cout << "  2^10      = " << FastMath::power(2, 10) << "   (expect 1024)\n";
+    cout << "  2^1000000000 % 1000000007 = " << FastMath::modularPower(2, 1000000000LL, 1000000007LL)
+         << "\n\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  exp = 0   : 5^0 = " << FastMath::power(5, 0) << " (anything^0 = 1)\n";
+    cout << "  base = 1  : 1^99 = " << FastMath::power(1, 99) << "\n";
+    cout << "  base = 0  : 0^5 = " << FastMath::power(0, 5) << "\n";
+    cout << "  mod = 1   : 7^9 % 1 = " << FastMath::modularPower(7, 9, 1) << " (always 0)\n";
 
     return 0;
 }

@@ -4,36 +4,52 @@
 
 using namespace std;
 
-// Function to find the length of the Longest Increasing Subsequence in O(n log n) time
+// Longest (strictly) Increasing Subsequence in O(n log n).
+// tails[i] = smallest possible tail value of an increasing subsequence of
+// length i+1. For each number, binary-search its slot and extend or improve.
 int lengthOfLIS(const vector<int>& nums) {
     if (nums.empty()) return 0;
 
-    // tails[i] stores the smallest tail of all increasing subsequences of length i+1
     vector<int> tails;
 
     for (int x : nums) {
-        // Find the index of the first element in tails that is >= x
         auto it = lower_bound(tails.begin(), tails.end(), x);
-
-        // If x is larger than all elements in tails, extend the tail
         if (it == tails.end()) {
-            tails.push_back(x);
-        } 
-        // Otherwise, find the smallest element >= x and replace it
-        else {
-            *it = x;
+            tails.push_back(x);   // x extends the longest subsequence so far
+        } else {
+            *it = x;              // lower the tail for that length
         }
     }
-
-    // The size of tails represents the length of the longest increasing subsequence
-    return tails.size();
+    return (int)tails.size();
 }
 
 int main() {
-    vector<int> nums = {10, 22, 9, 33, 21, 50, 41, 60, 80};
+    cout << "======== Longest Increasing Subsequence ========\n\n";
 
-    int lisLength = lengthOfLIS(nums);
-    cout << "Length of Longest Increasing Subsequence = " << lisLength << "\n";
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(n log n)   (lower_bound per element)\n";
+    cout << "  Space : O(n)\n";
+    cout << "  Note  : strictly increasing; returns LENGTH only\n\n";
+
+    cout << "[Demo]\n";
+    vector<int> nums = {10, 22, 9, 33, 21, 50, 41, 60, 80};
+    cout << "  array : ";
+    for (int x : nums) cout << x << " ";
+    cout << "\n  -> LIS length = " << lengthOfLIS(nums) << "  (e.g. 10,22,33,50,60,80)\n\n";
+
+    cout << "[Cases]\n";
+    cout << "  strictly increasing : " << lengthOfLIS({1, 2, 3, 4, 5}) << "\n";
+    cout << "  strictly decreasing : " << lengthOfLIS({5, 4, 3, 2, 1}) << "\n";
+    cout << "  with duplicates     : " << lengthOfLIS({2, 2, 2, 2}) << "  (strict -> 1)\n";
+    cout << "  mixed               : " << lengthOfLIS({0, 8, 4, 12, 2, 10, 6, 14, 1, 9}) << "\n";
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  empty        : " << lengthOfLIS({}) << "\n";
+    cout << "  single       : " << lengthOfLIS({7}) << "\n";
+    cout << "  two ascending: " << lengthOfLIS({1, 2}) << "\n";
+    cout << "  two equal    : " << lengthOfLIS({3, 3}) << "\n";
+    cout << "\n";
 
     return 0;
 }

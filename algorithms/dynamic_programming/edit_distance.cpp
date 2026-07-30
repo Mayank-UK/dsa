@@ -5,49 +5,61 @@
 
 using namespace std;
 
-// Function to compute the edit distance between two strings
+// Levenshtein edit distance: min insertions/deletions/substitutions to turn
+// str1 into str2. dp[i][j] = distance between str1[0..i-1] and str2[0..j-1].
 int editDistance(const string& str1, const string& str2) {
-    int m = str1.length();
-    int n = str2.length();
+    int m = (int)str1.length();
+    int n = (int)str2.length();
 
-    // Create a 2D DP table with dimensions (m + 1) x (n + 1)
     vector<vector<int>> dp(m + 1, vector<int>(n + 1));
 
-    // Initialize base cases
     for (int i = 0; i <= m; i++) {
         for (int j = 0; j <= n; j++) {
-            // If first string is empty, insert all characters of second string
             if (i == 0) {
-                dp[i][j] = j;
-            }
-            // If second string is empty, remove all characters of first string
-            else if (j == 0) {
-                dp[i][j] = i;
-            }
-            // If characters match, no operation is needed
-            else if (str1[i - 1] == str2[j - 1]) {
-                dp[i][j] = dp[i - 1][j - 1];
-            }
-            // If characters don't match, consider all options and take minimum
-            else {
+                dp[i][j] = j;                      // insert all of str2
+            } else if (j == 0) {
+                dp[i][j] = i;                      // delete all of str1
+            } else if (str1[i - 1] == str2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1];       // chars match, free
+            } else {
                 dp[i][j] = 1 + min({
-                    dp[i - 1][j],    // Deletion
-                    dp[i][j - 1],    // Insertion
-                    dp[i - 1][j - 1] // Substitution
+                    dp[i - 1][j],                  // delete
+                    dp[i][j - 1],                  // insert
+                    dp[i - 1][j - 1]               // substitute
                 });
             }
         }
     }
-
     return dp[m][n];
 }
 
 int main() {
-    string str1 = "kitten";
-    string str2 = "sitting";
+    cout << "=================== Edit Distance ===================\n\n";
 
-    int distance = editDistance(str1, str2);
-    cout << "The edit distance between \"" << str1 << "\" and \"" << str2 << "\" is: " << distance << "\n";
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(m * n)\n";
+    cout << "  Space : O(m * n)     (O(min(m,n)) with the rolling variant)\n";
+    cout << "  Note  : Levenshtein — insert / delete / substitute each cost 1\n\n";
+
+    cout << "[Demo]\n";
+    string s1 = "kitten";
+    string s2 = "sitting";
+    cout << "  str1 : " << s1 << "\n";
+    cout << "  str2 : " << s2 << "\n";
+    cout << "  -> Edit distance = " << editDistance(s1, s2) << "  (k->s, e->i, +g)\n\n";
+
+    cout << "[Cases]\n";
+    cout << "  identical   : " << editDistance("abc", "abc") << "\n";
+    cout << "  one extra   : " << editDistance("abc", "abcd") << "\n";
+    cout << "  anagram-ish : " << editDistance("flaw", "lawn") << "\n";
+    cout << "  full replace: " << editDistance("abc", "xyz") << "\n";
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  both empty : " << editDistance("", "") << "\n";
+    cout << "  one empty  : " << editDistance("abc", "") << " / " << editDistance("", "abc") << "\n";
+    cout << "  single char: " << editDistance("a", "b") << " / " << editDistance("a", "a") << "\n";
+    cout << "\n";
 
     return 0;
 }

@@ -1,72 +1,88 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 
-// Structure to represent a job with ID, deadline, and profit
 struct Job {
     int id;
     int deadline;
     int profit;
-
-    // Comparator to sort jobs in descending order of profit
-    bool operator<(const Job& other) const {
-        return profit > other.profit;
-    }
 };
 
-// Function to schedule jobs to maximize total profit
-void scheduleJobs(vector<Job>& jobs) {
-    // Step 1: Sort jobs in descending order of profit
-    sort(jobs.begin(), jobs.end());
+struct Schedule {
+    int jobCount;
+    int totalProfit;
+    vector<int> slots;   // slots[t] = job id scheduled at time t (0 = free)
+};
 
-    // Find the maximum deadline to size our slot array
+// Greedy: process jobs in decreasing profit, place each in the latest free
+// slot <= its deadline. Latest-slot keeps earlier slots free for tighter jobs.
+Schedule scheduleJobs(const vector<Job>& jobs) {
+    vector<Job> ordered = jobs;
+    sort(ordered.begin(), ordered.end(), [](const Job& a, const Job& b) {
+        return a.profit > b.profit;
+    });
+
     int maxDeadline = 0;
-    for (const auto& job : jobs) {
-        maxDeadline = max(maxDeadline, job.deadline);
-    }
+    for (const auto& j : ordered) maxDeadline = max(maxDeadline, j.deadline);
 
-    // Slot array to keep track of free time slots (1-indexed)
-    vector<int> slot(maxDeadline + 1, -1);
-    int totalProfit = 0;
-    int countJobs = 0;
-    vector<int> scheduledJobIds;
+    vector<int> slot(maxDeadline + 1, 0);
+    int profit = 0, count = 0;
 
-    // Step 2: Iterate through sorted jobs and find latest available slot
-    for (const auto& job : jobs) {
-        // Search for a free slot from the job's deadline down to 1
-        for (int j = min(maxDeadline, job.deadline); j >= 1; j--) {
-            if (slot[j] == -1) {
-                slot[j] = job.id;       // Allocate slot to this job
-                totalProfit += job.profit;
-                countJobs++;
-                scheduledJobIds.push_back(job.id);
+    for (const auto& j : ordered) {
+        for (int t = min(maxDeadline, j.deadline); t >= 1; t--) {
+            if (slot[t] == 0) {
+                slot[t] = j.id;
+                profit += j.profit;
+                count++;
                 break;
             }
         }
     }
+    return {count, profit, slot};
+}
 
-    // Print the results
-    cout << "Maximum Profit Earned: " << totalProfit << "\n";
-    cout << "Number of Jobs Done: " << countJobs << "\n";
-    cout << "Scheduled Job IDs in order of execution: ";
-    for (int id : scheduledJobIds) {
-        cout << id << " ";
-    }
-    cout << "\n";
+static void printTimeline(const vector<int>& slot) {
+    cout << "  time slot -> job:\n";
+    for (int t = 1; t < (int)slot.size(); t++)
+        cout << "    t=" << t << " : " << (slot[t] == 0 ? "(free)" : to_string(slot[t])) << "\n";
 }
 
 int main() {
-    // Define jobs: {id, deadline, profit}
-    vector<Job> jobs = {
-        {1, 4, 20},
-        {2, 1, 10},
-        {3, 1, 40},
-        {4, 1, 30}
-    };
+    cout << "=============== Job Scheduling ===============\n\n";
 
-    scheduleJobs(jobs);
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(n log n + n*d)   d = max deadline (slot search)\n";
+    cout << "  Space : O(d)\n";
+    cout << "  Note  : greedy by profit; latest free slot <= deadline\n\n";
+
+    cout << "[Demo]\n";
+    vector<Job> jobs = {{1, 4, 20}, {2, 1, 10}, {3, 1, 40}, {4, 1, 30}};
+    cout << "  jobs (id, deadline, profit):\n";
+    for (const auto& j : jobs)
+        cout << "    [" << j.id << "] d=" << j.deadline << " p=" << j.profit << "\n";
+    Schedule s = scheduleJobs(jobs);
+    cout << "  jobs scheduled = " << s.jobCount << ", total profit = " << s.totalProfit << "\n";
+    printTimeline(s.slots);
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  no jobs : count = " << scheduleJobs({}).jobCount << ", profit = "
+         << scheduleJobs({}).totalProfit << "\n";
+    cout << "  all jobs deadline 1 (only one fits):\n";
+    {
+        Schedule s2 = scheduleJobs({{1, 1, 50}, {2, 1, 30}, {3, 1, 10}});
+        cout << "    count = " << s2.jobCount << ", profit = " << s2.totalProfit
+             << " (highest-profit job wins the single slot)\n";
+    }
+    cout << "  deadline larger than job count:\n";
+    {
+        Schedule s3 = scheduleJobs({{1, 10, 70}});
+        cout << "    count = " << s3.jobCount << ", profit = " << s3.totalProfit << "\n";
+    }
+    cout << "\n";
 
     return 0;
 }

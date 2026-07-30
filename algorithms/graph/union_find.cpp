@@ -1,74 +1,73 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
 using namespace std;
 
+// Disjoint Set Union with path compression + union by rank.
 class DSU {
 private:
     vector<int> parent;
-    vector<int> rank;
+    vector<int> rank_;
     int numComponents;
 
 public:
-    // Constructor to initialize DSU for n elements (1-indexed)
     DSU(int n) {
         parent.resize(n + 1);
-        rank.resize(n + 1, 0);
+        rank_.resize(n + 1, 0);
         numComponents = n;
-        for (int i = 1; i <= n; i++) {
-            parent[i] = i; // Every element is its own parent initially
-        }
+        for (int i = 1; i <= n; i++) parent[i] = i;
     }
 
-    // Find function with Path Compression
+    // Find with path compression (flattens the tree on the way up).
     int find(int i) {
-        if (parent[i] == i)
-            return i;
-        return parent[i] = find(parent[i]); // Path compression flattens the tree
+        if (parent[i] == i) return i;
+        return parent[i] = find(parent[i]);
     }
 
-    // Union function by Rank
+    // Union by rank: smaller tree goes under the larger.
     void unite(int i, int j) {
-        int root_i = find(i);
-        int root_j = find(j);
+        int ri = find(i), rj = find(j);
+        if (ri == rj) return;
 
-        if (root_i != root_j) {
-            // Attach smaller rank tree under root of high rank tree
-            if (rank[root_i] < rank[root_j]) {
-                parent[root_i] = root_j;
-            } else if (rank[root_i] > rank[root_j]) {
-                parent[root_j] = root_i;
-            } else {
-                parent[root_j] = root_i;
-                rank[root_i]++;
-            }
-            numComponents--; // Merging two components reduces total count by 1
-        }
+        if (rank_[ri] < rank_[rj]) parent[ri] = rj;
+        else if (rank_[ri] > rank_[rj]) parent[rj] = ri;
+        else { parent[rj] = ri; rank_[ri]++; }
+        numComponents--;
     }
 
-    // Check if two elements belong to the same set
-    bool connected(int i, int j) {
-        return find(i) == find(j);
-    }
-
-    // Return current number of disjoint components
-    int getComponentCount() {
-        return numComponents;
-    }
+    bool connected(int i, int j) { return find(i) == find(j); }
+    int getComponentCount() { return numComponents; }
 };
 
+static string yesNo(bool b) { return b ? "Yes" : "No"; }
+
 int main() {
-    int n = 5; // Number of elements (1-indexed)
-    DSU dsu(n);
+    cout << "=============== Union-Find (DSU) ===============\n\n";
 
-    // Perform union operations
-    dsu.unite(1, 2);
-    dsu.unite(3, 4);
-    dsu.unite(2, 4); // Connects {1, 2} and {3, 4} into a single component {1, 2, 3, 4}
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(alpha(n)) per op ~ amortized O(1)   (inverse Ackermann)\n";
+    cout << "  Space : O(n)\n";
+    cout << "  Note  : path compression + union by rank\n\n";
 
-    cout << "Are 1 and 3 connected? " << (dsu.connected(1, 3) ? "Yes" : "No") << "\n";
-    cout << "Are 1 and 5 connected? " << (dsu.connected(1, 5) ? "Yes" : "No") << "\n";
-    cout << "Total Disjoint Components: " << dsu.getComponentCount() << "\n";
+    cout << "[Demo]\n";
+    DSU dsu(5);
+    cout << "  initial components : " << dsu.getComponentCount() << "  (n=5)\n";
+    dsu.unite(1, 2); cout << "  unite(1,2) -> " << dsu.getComponentCount() << "\n";
+    dsu.unite(3, 4); cout << "  unite(3,4) -> " << dsu.getComponentCount() << "\n";
+    dsu.unite(2, 4); cout << "  unite(2,4) -> " << dsu.getComponentCount() << "  ({1,2,3,4} merge)\n";
+    cout << "  connected(1,3)? " << yesNo(dsu.connected(1, 3)) << "\n";
+    cout << "  connected(1,5)? " << yesNo(dsu.connected(1, 5)) << "\n";
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    DSU single(1);
+    cout << "  single element    : find(1)=" << single.find(1)
+         << ", components=" << single.getComponentCount() << "\n";
+    DSU selfU(3);
+    selfU.unite(2, 2);  // unite with itself
+    cout << "  unite(x,x) no-op : components=" << selfU.getComponentCount() << "\n";
+    cout << "\n";
 
     return 0;
 }

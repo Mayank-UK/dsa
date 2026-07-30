@@ -2,73 +2,70 @@
 #include <vector>
 #include <queue>
 #include <tuple>
+#include <string>
 
 using namespace std;
 
-// Structure to represent a weighted edge for printing MST results
-struct Edge {
-    int u, v, weight;
-};
+struct Edge { int u, v, weight; };
 
-// Function to run Prim's algorithm using a min-priority queue
-void primMST(int n, const vector<vector<pair<int, int>>>& adj) {
-    vector<bool> visited(n + 1, false);
+struct MST { long long totalWeight; vector<Edge> edges; };
 
-    long long mstTotalWeight = 0;
-    vector<Edge> mstEdges;
+// Greedy view of Prim: start with one vertex and grow a single tree by always
+// adding the cheapest edge that crosses the cut (tree vs. rest). The cut
+// property guarantees the cheapest crossing edge belongs to some MST, so the
+// greedy choice is safe at every step.
+MST primMST(int n, const vector<vector<pair<int, int>>>& adj) {
+    vector<bool> inTree(n + 1, false);
+    // {weight, vertex, parent}
+    priority_queue<tuple<int, int, int>, vector<tuple<int, int, int>>,
+                   greater<tuple<int, int, int>>> pq;
 
-    // Min-priority queue stores tuples of {weight, current_vertex, parent_vertex}
-    priority_queue<tuple<int, int, int>, vector<tuple<int, int, int>>, greater<tuple<int, int, int>>> pqEdges;
-    pqEdges.push({0, 1, 0}); // Start from node 1 with weight 0 and parent 0
+    long long total = 0;
+    vector<Edge> edges;
 
-    while (!pqEdges.empty()) {
-        auto [weight, u, parent] = pqEdges.top();
-        pqEdges.pop();
-
-        if (visited[u]) continue;
-
-        visited[u] = true;
-        if (parent != 0) {
-            mstTotalWeight += weight;
-            mstEdges.push_back({parent, u, weight});
-        }
-
-        // Iterate through all neighbors of u
-        for (const auto& neighbor : adj[u]) {
-            int v = neighbor.first;
-            int edgeWeight = neighbor.second;
-
-            if (!visited[v]) {
-                pqEdges.push({edgeWeight, v, u});
-            }
+    pq.push({0, 1, 0});
+    while (!pq.empty()) {
+        auto [w, u, parent] = pq.top(); pq.pop();
+        if (inTree[u]) continue;
+        inTree[u] = true;
+        if (parent != 0) { total += w; edges.push_back({parent, u, w}); }
+        for (const auto& [v, ew] : adj[u]) {
+            if (!inTree[v]) pq.push({ew, v, u});
         }
     }
-
-    // Print the results
-    cout << "Minimum Spanning Tree Total Weight (Prim's): " << mstTotalWeight << "\n";
-    cout << "Edges in the MST:\n";
-    for (const auto& edge : mstEdges) {
-        cout << "(" << edge.u << " - " << edge.v << ") : weight " << edge.weight << "\n";
-    }
+    return {total, edges};
 }
 
 int main() {
-    int n = 4; // Number of vertices (1-indexed)
+    cout << "================ Prim MST (Greedy) ================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(E log V)   binary-heap adjacency list\n";
+    cout << "  Space : O(V + E)\n";
+    cout << "  Note  : greedy cut-property; grows one tree by the cheapest crossing edge\n";
+    cout << "          (see graph/prim.cpp for the same algorithm)\n\n";
+
+    cout << "[Demo]\n";
+    int n = 4;
     vector<vector<pair<int, int>>> adj(n + 1);
+    auto addEdge = [&](int u, int v, int w) { adj[u].push_back({v, w}); adj[v].push_back({u, w}); };
+    addEdge(1, 2, 1); addEdge(1, 3, 3); addEdge(2, 3, 1); addEdge(2, 4, 4); addEdge(3, 4, 2);
+    MST m = primMST(n, adj);
+    cout << "  total MST weight = " << m.totalWeight << "\n";
+    cout << "  edges:\n";
+    for (const auto& e : m.edges)
+        cout << "    (" << e.u << " - " << e.v << ") w=" << e.weight << "\n";
+    cout << "\n";
 
-    auto addEdge = [&](int u, int v, int w) {
-        adj[u].push_back({v, w});
-        adj[v].push_back({u, w}); // Undirected graph
-    };
-
-    // Constructing a weighted undirected graph
-    addEdge(1, 2, 1);
-    addEdge(1, 3, 3);
-    addEdge(2, 3, 1);
-    addEdge(2, 4, 4);
-    addEdge(3, 4, 2);
-
-    primMST(n, adj);
+    cout << "[Edge Cases]\n";
+    cout << "  disconnected (4 nodes, one edge 1-2):\n";
+    vector<vector<pair<int, int>>> disc(4 + 1);
+    disc[1].push_back({2, 5}); disc[2].push_back({1, 5});
+    MST md = primMST(4, disc);
+    cout << "    weight=" << md.totalWeight << ", edges=" << md.edges.size()
+         << " (< " << 4 - 1 << " => forest)\n";
+    cout << "  single node : weight=" << primMST(1, vector<vector<pair<int,int>>>(1 + 1)).totalWeight << "\n";
+    cout << "\n";
 
     return 0;
 }

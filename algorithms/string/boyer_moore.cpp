@@ -5,99 +5,91 @@
 
 using namespace std;
 
-// Using 256 to cover all extended ASCII characters
-const int ALPHABET_SIZE = 256;
+// Boyer-Moore (bad-character heuristic). Match the pattern against the text from
+// RIGHT to LEFT. On a mismatch, slide the pattern so the mismatched text char
+// aligns with its rightmost occurrence in the pattern — often skipping large
+// chunks of text. Sublinear in practice on large alphabets. (This implements the
+// bad-character rule only; the full algorithm also adds the good-suffix rule.)
+
+const int ALPHABET_SIZE = 256;   // extended ASCII
 
 class BoyerMoore {
 private:
     string pattern;
-    vector<int> bad_char;
+    vector<int> bad_char;        // rightmost index of each char in the pattern, else -1
 
-    // Preprocess the pattern to build the Bad Character Table
     void buildBadCharTable() {
-        // Initialize all occurrences as -1
         bad_char.assign(ALPHABET_SIZE, -1);
-
-        // Fill the actual value of the last occurrence of each character in the pattern
-        for (int i = 0; i < pattern.length(); i++) {
+        for (int i = 0; i < (int)pattern.length(); ++i)
             bad_char[(unsigned char)pattern[i]] = i;
-        }
     }
 
 public:
-    // Constructor initializes the pattern and builds the preprocessing table
-    BoyerMoore(const string& input_pattern) {
-        pattern = input_pattern;
-        buildBadCharTable();
-    }
+    BoyerMoore(const string& p) : pattern(p) { buildBadCharTable(); }
 
-    // Search the text using the preprocessed Bad Character table
-    void search(const string& text) {
-        int m = pattern.length();
-        int n = text.length();
+    // Returns every start index in `text` where `pattern` occurs.
+    vector<int> search(const string& text) const {
+        vector<int> matches;
+        int m = (int)pattern.length();
+        int n = (int)text.length();
+        if (m == 0 || m > n) return matches;
 
-        if (m == 0 || m > n) {
-            cout << "Pattern is empty or longer than the text.\n";
-            return;
-        }
-
-        cout << "--- Search Results ---\n";
-        bool found = false;
-
-        // 's' represents the shift of the pattern with respect to the text
-        int s = 0; 
-        
-        while (s <= (n - m)) {
+        for (int s = 0; s <= n - m;) {
             int j = m - 1;
+            while (j >= 0 && pattern[j] == text[s + j]) --j;   // match right→left
 
-            // Keep reducing index j of the pattern while characters of 
-            // the pattern and text match at this shift 's'
-            while (j >= 0 && pattern[j] == text[s + j]) {
-                j--;
-            }
-
-            // If the pattern is present at the current shift
-            if (j < 0) {
-                found = true;
-                cout << "Pattern '" << pattern << "' found starting at index " << s << "\n";
-
-                // Shift the pattern so that the next character in the text
-                // aligns with its last occurrence in the pattern.
-                // The condition s + m < n is necessary for when the pattern 
-                // occurs exactly at the end of the text.
-                s += (s + m < n) ? m - bad_char[(unsigned char)text[s + m]] : 1;
+            if (j < 0) {                                       // full match
+                matches.push_back(s);
+                // Slide past: align the char after the match with its rightmost spot.
+                int next = bad_char[(unsigned char)text[s + m]];
+                s += (s + m < n) ? max(1, m - next) : 1;
             } else {
-                // Mismatch occurred. 
-                // Shift the pattern so that the bad character in the text
-                // aligns with its last occurrence in the pattern.
-                // The max() function ensures we always get a positive shift 
-                // (avoiding moving backwards if the last occurrence is to the right of j).
+                // Mismatch at j: shift so text[s+j] aligns with its rightmost spot
+                // in the pattern (clamped to ≥1 so we never slide backward).
                 s += max(1, j - bad_char[(unsigned char)text[s + j]]);
             }
         }
-
-        if (!found) {
-            cout << "No patterns found in the text.\n";
-        }
-        cout << "----------------------\n";
+        return matches;
     }
 };
 
+// ─── Demo helpers ───
+static void printMatches(const string& pattern, const string& text, const vector<int>& m) {
+    cout << "  text    : " << text << "\n";
+    cout << "  pattern : " << pattern << "\n";
+    if (m.empty()) { cout << "  result  : Not Found\n"; return; }
+    cout << "  found at: ";
+    for (size_t k = 0; k < m.size(); ++k) cout << m[k] << (k + 1 < m.size() ? ", " : "");
+    cout << "  (" << m.size() << " occurrence" << (m.size() == 1 ? "" : "s") << ")\n";
+}
+
+static void runCase(const string& label, const string& pattern, const string& text) {
+    cout << "[" << label << "]\n";
+    printMatches(pattern, text, BoyerMoore(pattern).search(text));
+    cout << "\n";
+}
+
 int main() {
-    // Text to search within
-    string text = "abacaabadcabacabaabb";
-    
-    // Pattern to find
+    cout << "==================== Boyer-Moore (Bad-Character) ====================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Best    : O(n / m)     sublinear — skips text on each mismatch\n";
+    cout << "  Worst   : O(n * m)     bad-char rule alone (good-suffix rule fixes this)\n";
+    cout << "  Space   : O(alphabet)  bad-character table (256 here)\n";
+    cout << "  Notes   : right-to-left compare; shines on large alphabets / long patterns.\n\n";
+
+    cout << "[Demo]\n";
     string pattern = "abacab";
-    
-    cout << "Text:    " << text << "\n";
-    cout << "Pattern: " << pattern << "\n\n";
+    printMatches(pattern, "abacaabadcabacabaabb", BoyerMoore(pattern).search("abacaabadcabacabaabb"));
+    cout << "\n";
 
-    // Initialize the Boyer-Moore algorithm
-    BoyerMoore bm(pattern);
-
-    // Perform the search
-    bm.search(text);
+    cout << "[Edge Cases]\n";
+    runCase("multiple       ", "AABA", "AABAACAADAABAABA");
+    runCase("overlapping    ", "AA",   "AAAAA");
+    runCase("absent         ", "XYZ",  "ABCDEFG");
+    runCase("pattern > text ", "ABCDEF", "ABC");
+    runCase("empty pattern  ", "",     "ABC");
+    runCase("single chars   ", "A",    "BANANA");
 
     return 0;
 }

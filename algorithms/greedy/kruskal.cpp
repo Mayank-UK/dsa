@@ -1,92 +1,85 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 
-// Structure to represent a weighted edge
 struct Edge {
     int u, v, weight;
-    
-    // Comparator to sort edges by weight
-    bool operator<(const Edge& other) const {
-        return weight < other.weight;
-    }
+    bool operator<(const Edge& o) const { return weight < o.weight; }
 };
 
-// Disjoint Set Union (DSU) structure for cycle detection
+// DSU (union-find) drives the cycle test during Kruskal.
 struct DSU {
-    vector<int> parent;
-    vector<int> rank;
-
-    DSU(int n) {
-        parent.resize(n + 1);
-        rank.resize(n + 1, 0);
-        for (int i = 1; i <= n; i++) {
-            parent[i] = i;
-        }
+    vector<int> parent, rank_;
+    DSU(int n) : parent(n + 1), rank_(n + 1, 0) {
+        for (int i = 1; i <= n; i++) parent[i] = i;
     }
-
-    int find(int i) {
-        if (parent[i] == i)
-            return i;
-        return parent[i] = find(parent[i]); // Path compression
-    }
-
+    int find(int i) { return parent[i] == i ? i : parent[i] = find(parent[i]); }
     void unite(int i, int j) {
-        int root_i = find(i);
-        int root_j = find(j);
-        if (root_i != root_j) {
-            if (rank[root_i] < rank[root_j]) {
-                parent[root_i] = root_j;
-            } else if (rank[root_i] > rank[root_j]) {
-                parent[root_j] = root_i;
-            } else {
-                parent[root_j] = root_i;
-                rank[root_i]++;
-            }
-        }
+        int ri = find(i), rj = find(j);
+        if (ri == rj) return;
+        if (rank_[ri] < rank_[rj]) parent[ri] = rj;
+        else if (rank_[ri] > rank_[rj]) parent[rj] = ri;
+        else { parent[rj] = ri; rank_[ri]++; }
     }
 };
 
-// Function to run Kruskal's algorithm and find MST weight and edges
-void kruskalMST(int n, vector<Edge>& edges) {
-    // Step 1: Sort all edges in increasing order of weight
+struct MST { long long totalWeight; vector<Edge> edges; };
+
+// Greedy view of Kruskal: sort all edges by weight and take each if it does not
+// create a cycle. The cycle property guarantees the cheapest edge across a cut
+// (equivalently, the cheapest that joins two components) is MST-safe, so the
+// greedy choice is safe at every step.
+MST kruskalMST(int n, vector<Edge>& edges) {
     sort(edges.begin(), edges.end());
-
     DSU dsu(n);
-    vector<Edge> mstEdges;
-    long long mstTotalWeight = 0;
-
-    // Step 2: Iterate through sorted edges
-    for (const auto& edge : edges) {
-        // If including this edge does not cause a cycle
-        if (dsu.find(edge.u) != dsu.find(edge.v)) {
-            dsu.unite(edge.u, edge.v);
-            mstEdges.push_back(edge);
-            mstTotalWeight += edge.weight;
+    long long total = 0;
+    vector<Edge> taken;
+    for (const auto& e : edges) {
+        if (dsu.find(e.u) != dsu.find(e.v)) {
+            dsu.unite(e.u, e.v);
+            taken.push_back(e);
+            total += e.weight;
         }
     }
-
-    // Print the results
-    cout << "Minimum Spanning Tree Total Weight: " << mstTotalWeight << "\n";
-    cout << "Edges in the MST:\n";
-    for (const auto& edge : mstEdges) {
-        cout << "(" << edge.u << " - " << edge.v << ") : weight " << edge.weight << "\n";
-    }
+    return {total, taken};
 }
 
 int main() {
-    int n = 4; // Number of vertices (1-indexed)
-    vector<Edge> edges = {
-        {1, 2, 1},
-        {1, 3, 3},
-        {2, 3, 1},
-        {2, 4, 4},
-        {3, 4, 2}
-    };
+    cout << "================ Kruskal MST (Greedy) ================\n\n";
 
-    kruskalMST(n, edges);
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(E log E)   dominated by the edge sort\n";
+    cout << "  Space : O(V + E)\n";
+    cout << "  Note  : greedy cycle-property; cheapest edge joining two components\n";
+    cout << "          (see graph/kruskal.cpp for the same algorithm)\n\n";
+
+    cout << "[Demo]\n";
+    int n = 4;
+    vector<Edge> edges = {
+        {1, 2, 1}, {1, 3, 3}, {2, 3, 1}, {2, 4, 4}, {3, 4, 2}
+    };
+    MST m = kruskalMST(n, edges);
+    cout << "  total MST weight = " << m.totalWeight << "\n";
+    cout << "  edges:\n";
+    for (const auto& e : m.edges)
+        cout << "    (" << e.u << " - " << e.v << ") w=" << e.weight << "\n";
+    cout << "\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  disconnected graph (no spanning tree):\n";
+    vector<Edge> disc = {{1, 2, 5}};  // 4 nodes, only one edge
+    MST md = kruskalMST(4, disc);
+    cout << "    weight=" << md.totalWeight << ", edges taken=" << md.edges.size()
+         << " (< " << 4 - 1 << " => forest, not a single tree)\n";
+    cout << "  single node : weight=";
+    {
+        vector<Edge> none;
+        cout << kruskalMST(1, none).totalWeight << "\n";
+    }
+    cout << "\n";
 
     return 0;
 }

@@ -1,0 +1,8 @@
+- Done
+    - Array
+        - Fixed array
+        - Dynamic array
+
+- Pending
+    - Array
+        - Suffix array

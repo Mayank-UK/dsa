@@ -1,114 +1,95 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
 using namespace std;
 
+// Hamiltonian Path via backtracking over an adjacency matrix.
+// A path visiting every vertex exactly once. From the current vertex we recurse
+// onto each unvisited neighbor; reaching count == V means success. Any vertex
+// can be the start, so the search tries each.
 class HamiltonianPath {
-private:
-    int V;                   // Number of vertices
-    vector<vector<int>> adj; // Adjacency matrix
-
-    // Core backtracking function
-    bool backtrack(int current_vertex, int count, vector<bool>& visited, vector<int>& path) {
-        // Base case: If the number of visited vertices equals the total number of vertices,
-        // a Hamiltonian Path has been successfully formed.
-        if (count == V) {
-            return true;
-        }
-
-        // Try all possible next vertices
+    int V;
+    vector<vector<int>> adj;
+    bool backtrack(int u, int count, vector<bool>& visited, vector<int>& path) {
+        if (count == V) return true;          // every vertex visited -> found
         for (int v = 0; v < V; ++v) {
-            // Check if there is an edge to vertex 'v' and it hasn't been visited yet
-            if (adj[current_vertex][v] && !visited[v]) {
-                
-                // 1. Choose: Mark as visited and add to path
-                visited[v] = true;
+            if (adj[u][v] && !visited[v]) {
+                visited[v] = true;            // choose
                 path.push_back(v);
-
-                // 2. Explore: Move forward recursively
-                if (backtrack(v, count + 1, visited, path)) {
-                    return true;
-                }
-
-                // 3. Un-choose (Backtrack): Remove from path and unmark to explore other branches
+                if (backtrack(v, count + 1, visited, path)) return true;
+                path.pop_back();              // un-choose
                 visited[v] = false;
-                path.pop_back();
             }
         }
-
         return false;
     }
-
 public:
-    // Constructor initializes the adjacency matrix with 0s
-    HamiltonianPath(int vertices) {
-        V = vertices;
-        adj.assign(V, vector<int>(V, 0));
-    }
+    HamiltonianPath(int vertices) : V(vertices), adj(vertices, vector<int>(vertices, 0)) {}
+    void addEdge(int u, int v) { adj[u][v] = adj[v][u] = 1; }
 
-    // Adds an undirected edge to the graph
-    void addEdge(int u, int v) {
-        // Bounds checking is omitted for brevity, assuming valid inputs
-        adj[u][v] = 1;
-        adj[v][u] = 1; 
-    }
-
-    // Initiates the search for a Hamiltonian Path
-    void findPath() {
+    // Returns the path (vertex sequence), or empty if none exists.
+    vector<int> findPath() {
         vector<bool> visited(V, false);
         vector<int> path;
-
-        cout << "--- Search Results ---\n";
-
-        // A Hamiltonian Path can start at any vertex, so we must try them all
-        for (int i = 0; i < V; ++i) {
-            // Setup the initial vertex
+        for (int i = 0; i < V; ++i) {        // try every start vertex
             visited[i] = true;
             path.push_back(i);
-
-            // Launch the backtracking process
-            if (backtrack(i, 1, visited, path)) {
-                cout << "Hamiltonian Path Found:\n";
-                for (int j = 0; j < path.size(); ++j) {
-                    cout << path[j] << (j == path.size() - 1 ? "" : " -> ");
-                }
-                cout << "\n----------------------\n";
-                return; // Stop after finding the first valid path
-            }
-
-            // Backtrack if starting from vertex 'i' yielded no paths
-            visited[i] = false;
+            if (backtrack(i, 1, visited, path)) return path;
             path.pop_back();
+            visited[i] = false;
         }
-
-        cout << "No Hamiltonian Path exists in this graph.\n";
-        cout << "----------------------\n";
+        return {};                            // no Hamiltonian path
     }
 };
 
 int main() {
-    /*
-        Let's create the following graph:
-           (0)---(1)---(2)
-            |   / \     |
-            |  /   \    |
-           (3)-------(4)
-    */
-    int vertices = 5;
-    HamiltonianPath hp(vertices);
+    cout << "============== Hamiltonian Path ==============\n\n";
 
-    hp.addEdge(0, 1);
-    hp.addEdge(0, 3);
-    hp.addEdge(1, 2);
-    hp.addEdge(1, 3);
-    hp.addEdge(1, 4);
-    hp.addEdge(2, 4);
-    hp.addEdge(3, 4);
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(V!) worst case   (factorial branching, lightly pruned)\n";
+    cout << "  Space : O(V) recursion + visited/path arrays\n";
+    cout << "  Note  : visit each vertex once; every vertex is a candidate start\n\n";
 
-    cout << "Graph contains " << vertices << " vertices.\n\n";
+    cout << "[Demo]\n";
+    //   (0)---(1)---(2)
+    //    |   / \     |
+    //   (3)-------(4)
+    HamiltonianPath hp(5);
+    hp.addEdge(0, 1); hp.addEdge(0, 3); hp.addEdge(1, 2);
+    hp.addEdge(1, 3); hp.addEdge(1, 4); hp.addEdge(2, 4); hp.addEdge(3, 4);
+    vector<int> path = hp.findPath();
+    if (path.empty()) {
+        cout << "  No Hamiltonian Path exists.\n";
+    } else {
+        cout << "  path (" << path.size() << " vertices): ";
+        for (size_t i = 0; i < path.size(); i++)
+            cout << path[i] << (i + 1 == path.size() ? "" : " -> ");
+        cout << "\n";
+    }
+    cout << "\n";
 
-    // Perform the search
-    hp.findPath();
+    cout << "[Edge Cases]\n";
+    cout << "  single vertex : ";
+    {
+        auto p = HamiltonianPath(1).findPath();
+        cout << (p.empty() ? "none" : to_string(p[0])) << "\n";
+    }
+    cout << "  disconnected (3 nodes, one edge): ";
+    {
+        HamiltonianPath d(3); d.addEdge(0, 1);   // node 2 isolated
+        auto p = d.findPath();
+        cout << (p.empty() ? "No Hamiltonian Path\n" : "found (unexpected)\n");
+    }
+    cout << "  simple chain 0-1-2-3: ";
+    {
+        HamiltonianPath c(4);
+        c.addEdge(0,1); c.addEdge(1,2); c.addEdge(2,3);
+        auto p = c.findPath();
+        for (size_t i = 0; i < p.size(); i++)
+            cout << p[i] << (i + 1 == p.size() ? "\n" : " -> ");
+    }
+    cout << "\n";
 
     return 0;
 }

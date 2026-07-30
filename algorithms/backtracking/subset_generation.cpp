@@ -1,69 +1,65 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
 using namespace std;
 
+// Power set via backtracking. Unlike combinations/permutations there is no
+// target-size base case: EVERY node on the recursion path is a valid subset, so
+// we record the current subset at entry, then branch on include/exclude of each
+// remaining element. Forward-only index avoids listing {1,2} and {2,1}.
 class Subsets {
-private:
-    // Core backtracking function
-    void backtrack(int start_index, const vector<int>& elements, vector<int>& current_subset, vector<vector<int>>& result) {
-        // Unlike N-Queens or Permutations, we don't wait for a base case to record the state.
-        // Every valid 'current_subset' formed along the path is a valid subset of the power set.
-        result.push_back(current_subset);
-
-        // Iterate through the remaining elements starting from 'start_index'
-        for (int i = start_index; i < elements.size(); ++i) {
-            // 1. Choose: Include the current element in the subset
-            current_subset.push_back(elements[i]);
-
-            // 2. Explore: Move to the next element
-            // We pass 'i + 1' to ensure we only move forward, preventing duplicate sets like {1,2} and {2,1}
-            backtrack(i + 1, elements, current_subset, result);
-
-            // 3. Un-choose (Backtrack): Remove the element to explore subsets without it
-            current_subset.pop_back();
+    void backtrack(int start, const vector<int>& elements,
+                   vector<int>& cur, vector<vector<int>>& result) {
+        result.push_back(cur);   // every prefix is a subset (incl. the empty one)
+        for (int i = start; i < (int)elements.size(); ++i) {
+            cur.push_back(elements[i]);              // choose
+            backtrack(i + 1, elements, cur, result); // explore forward
+            cur.pop_back();                           // un-choose
         }
     }
-
 public:
-    // Public interface to generate all subsets
     vector<vector<int>> generate(const vector<int>& elements) {
         vector<vector<int>> result;
-        vector<int> current_subset;
-        
-        // Start backtracking from index 0
-        backtrack(0, elements, current_subset, result);
-        
+        vector<int> cur;
+        backtrack(0, elements, cur, result);
         return result;
     }
 };
 
-int main() {
-    // A distinct set of elements
-    vector<int> elements = {1, 2, 3};
-    
-    cout << "Original Set: { ";
-    for (int num : elements) cout << num << " ";
-    cout << "}\n\n";
-
-    // Initialize the Subsets algorithm
-    Subsets sub;
-
-    // Generate all subsets
-    vector<vector<int>> result = sub.generate(elements);
-
-    // Print the results
-    cout << "--- Generated Subsets (Power Set) ---\n";
-    int count = 1;
-    for (const auto& subset : result) {
-        cout << count++ << ": [ ";
-        for (int num : subset) {
-            cout << num << " ";
-        }
-        cout << "]\n";
+static void printSubsets(const vector<vector<int>>& subs) {
+    int n = 1;
+    for (const auto& s : subs) {
+        cout << "    " << n++ << ": { ";
+        for (int x : s) cout << x << " ";
+        cout << "}\n";
     }
-    cout << "-------------------------------------\n";
-    cout << "Total subsets found: " << result.size() << "\n";
+}
+
+int main() {
+    cout << "============= Subset Generation (Power Set) =============\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Time  : O(n * 2^n)   2^n subsets, each copied in O(n)\n";
+    cout << "  Space : O(n) recursion depth + O(n*2^n) to store results\n";
+    cout << "  Note  : every path prefix is a subset; includes the empty set\n\n";
+
+    cout << "[Demo]\n";
+    vector<int> elements = {1, 2, 3};
+    cout << "  set = { ";
+    for (int x : elements) cout << x << " ";
+    cout << "}\n";
+    auto result = Subsets().generate(elements);
+    printSubsets(result);
+    cout << "  total = " << result.size() << "  (= 2^" << elements.size()
+         << " = " << result.size() << ")\n\n";
+
+    cout << "[Edge Cases]\n";
+    cout << "  empty set -> only the empty subset:\n";
+    printSubsets(Subsets().generate({}));
+    cout << "  single element:\n";
+    printSubsets(Subsets().generate({5}));
+    cout << "\n";
 
     return 0;
 }

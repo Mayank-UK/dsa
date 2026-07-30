@@ -1,67 +1,96 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 
-// A helper function to do counting sort of arr[] according to the digit represented by exp.
+// Stable counting sort of arr by the digit at place exp (1, 10, 100, ...).
 void countingSortByDigit(vector<int>& arr, int exp) {
     int n = arr.size();
     vector<int> output(n);
     vector<int> count(10, 0);
 
-    // Store count of occurrences in count[]
-    for (int i = 0; i < n; i++) {
+    // Frequency of each digit 0..9 at this place.
+    for (int i = 0; i < n; i++)
         count[(arr[i] / exp) % 10]++;
-    }
 
-    // Change count[i] so that count[i] now contains the actual position of this digit in output[]
-    for (int i = 1; i < 10; i++) {
-        count[i] += count[i - 1];
-    }
+    // Prefix sums -> final positions.
+    for (int d = 1; d < 10; d++)
+        count[d] += count[d - 1];
 
-    // Build the output array (traverse backward to maintain stability)
+    // Scatter backward to keep the previous (lower) digit ordering intact.
     for (int i = n - 1; i >= 0; i--) {
-        output[count[(arr[i] / exp) % 10] - 1] = arr[i];
-        count[(arr[i] / exp) % 10]--;
+        int digit = (arr[i] / exp) % 10;
+        output[count[digit] - 1] = arr[i];
+        count[digit]--;
     }
 
-    // Copy the output array to arr[], so that arr[] now contains sorted numbers according to current digit
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
         arr[i] = output[i];
-    }
 }
 
-// Main function to implement Radix Sort
+// Radix sort: stable sort each decimal digit, least significant first.
+// Handles non-negative integers only.
 void radixSort(vector<int>& arr) {
     if (arr.empty()) return;
 
-    // Find the maximum number to know the number of digits
-    int maxVal = *max_element(arr.begin(), arr.end());
+    int maxVal = *max_element(arr.begin(), arr.end());  // drives digit count
 
-    // Do counting sort for every digit. Note that instead of passing digit number,
-    // exp is 10^i where i is the current digit position (1, 10, 100, etc.)
-    for (int exp = 1; maxVal / exp > 0; exp *= 10) {
+    for (int exp = 1; maxVal / exp > 0; exp *= 10)
         countingSortByDigit(arr, exp);
-    }
+}
+
+// ─── Demo helpers ───
+static void printArray(const vector<int>& arr, const string& label) {
+    cout << "  " << label << " : ";
+    if (arr.empty()) { cout << "(empty)\n"; return; }
+    for (int x : arr) cout << x << " ";
+    cout << "\n";
+}
+
+static bool isSorted(const vector<int>& arr) {
+    for (size_t i = 1; i < arr.size(); i++)
+        if (arr[i] < arr[i - 1]) return false;
+    return true;
+}
+
+static void runCase(const string& name, vector<int> arr) {
+    printArray(arr, name + " before");
+    radixSort(arr);
+    printArray(arr, name + " after ");
 }
 
 int main() {
+    cout << "===================== Radix Sort =====================\n\n";
+
+    cout << "[Complexity]\n";
+    cout << "  Best    : O(d * (n + k))   d = digits, k = base (10)\n";
+    cout << "  Average : O(d * n)\n";
+    cout << "  Worst   : O(d * n)\n";
+    cout << "  Space   : O(n + k)\n";
+    cout << "  Stable  : Yes              each pass is a stable counting sort\n";
+    cout << "  Note    : keys must be non-negative integers\n\n";
+
+    cout << "[Demo]\n";
     vector<int> arr = {170, 45, 75, 90, 802, 24, 2, 66};
-
-    cout << "Original array:\n";
-    for (int num : arr) {
-        cout << num << " ";
-    }
-    cout << "\n";
-
+    printArray(arr, "before");
     radixSort(arr);
+    printArray(arr, "after ");
+    cout << "  Sorted correctly : " << (isSorted(arr) ? "Yes" : "No") << "\n\n";
 
-    cout << "Sorted array using Radix Sort:\n";
-    for (int num : arr) {
-        cout << num << " ";
-    }
+    cout << "[Edge Cases]\n";
+    runCase("empty       ", {});
+    runCase("single      ", {42});
+    runCase("duplicates  ", {7, 7, 3, 7, 3});
+    runCase("already sort", {1, 2, 300, 4000});
+    runCase("reverse     ", {900, 80, 7, 3, 1});
+    runCase("vary width  ", {1, 100, 22, 9, 3050});
     cout << "\n";
+
+    cout << "[Limitation]\n";
+    cout << "  Handles only non-negative integers.\n";
+    cout << "  Negative keys need a sign split or an offset.\n\n";
 
     return 0;
 }

@@ -1,53 +1,83 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <string>
+#include <iomanip>
 
 using namespace std;
 
-// Function to perform bucket sort on floating-point numbers in range [0, 1)
+// Bucket sort for floats in [0, 1): scatter into n buckets by value,
+// sort each bucket, then concatenate. Linear-ish when input is uniform.
 void bucketSort(vector<float>& arr) {
     int n = arr.size();
     if (n <= 1) return;
 
-    // 1. Create n empty buckets
     vector<vector<float>> buckets(n);
 
-    // 2. Put array elements in different buckets
+    // Distribute element i into bucket floor(n * arr[i]).
     for (int i = 0; i < n; i++) {
-        int bi = n * arr[i]; // Index in bucket
-        if (bi >= n) bi = n - 1; // Safety check for upper bound
+        int bi = (int)(n * arr[i]);
+        if (bi >= n) bi = n - 1;  // clamp arr[i] == 1.0 to the last bucket
         buckets[bi].push_back(arr[i]);
     }
 
-    // 3. Sort individual buckets
-    for (int i = 0; i < n; i++) {
+    // Sort each bucket individually.
+    for (int i = 0; i < n; i++)
         sort(buckets[i].begin(), buckets[i].end());
-    }
 
-    // 4. Concatenate all buckets back into arr
+    // Concatenate buckets back into arr.
     int index = 0;
-    for (int i = 0; i < n; i++) {
-        for (float val : buckets[i]) {
+    for (int i = 0; i < n; i++)
+        for (float val : buckets[i])
             arr[index++] = val;
-        }
-    }
+}
+
+// ─── Demo helpers ───
+static void printArray(const vector<float>& arr, const string& label) {
+    cout << "  " << label << " : ";
+    if (arr.empty()) { cout << "(empty)\n"; return; }
+    cout << fixed << setprecision(4);
+    for (float x : arr) cout << x << " ";
+    cout << "\n";
+}
+
+static bool isSorted(const vector<float>& arr) {
+    for (size_t i = 1; i < arr.size(); i++)
+        if (arr[i] < arr[i - 1]) return false;
+    return true;
+}
+
+static void runCase(const string& name, vector<float> arr) {
+    printArray(arr, name + " before");
+    bucketSort(arr);
+    printArray(arr, name + " after ");
 }
 
 int main() {
-    vector<float> arr = {0.897, 0.565, 0.656, 0.1234, 0.665, 0.3434};
+    cout << "==================== Bucket Sort ====================\n\n";
 
-    cout << "Original array:\n";
-    for (float num : arr) {
-        cout << num << " ";
-    }
-    cout << "\n";
+    cout << "[Complexity]\n";
+    cout << "  Best    : O(n + k)     uniform input, k buckets\n";
+    cout << "  Average : O(n)         when input is uniformly distributed\n";
+    cout << "  Worst   : O(n^2)       all elements land in one bucket\n";
+    cout << "  Space   : O(n + k)\n";
+    cout << "  Stable  : Yes          (stable bucket sort + per-bucket sort)\n";
+    cout << "  Note    : this version assumes keys in [0, 1)\n\n";
 
+    cout << "[Demo]\n";
+    vector<float> arr = {0.897f, 0.565f, 0.656f, 0.1234f, 0.665f, 0.3434f};
+    printArray(arr, "before");
     bucketSort(arr);
+    printArray(arr, "after ");
+    cout << "  Sorted correctly : " << (isSorted(arr) ? "Yes" : "No") << "\n\n";
 
-    cout << "Sorted array using Bucket Sort:\n";
-    for (float num : arr) {
-        cout << num << " ";
-    }
+    cout << "[Edge Cases]\n";
+    runCase("empty       ", {});
+    runCase("single      ", {0.42f});
+    runCase("duplicates  ", {0.5f, 0.1f, 0.5f, 0.2f, 0.1f});
+    runCase("already sort", {0.1f, 0.2f, 0.3f, 0.4f});
+    runCase("reverse     ", {0.9f, 0.7f, 0.5f, 0.3f, 0.1f});
+    runCase("near zero   ", {0.001f, 0.999f, 0.5f, 0.25f, 0.75f});
     cout << "\n";
 
     return 0;
