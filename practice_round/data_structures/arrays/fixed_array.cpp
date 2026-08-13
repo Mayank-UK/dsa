@@ -3,7 +3,7 @@
 */
 
 // #include <iostream>
-// using namespace std;
+// using std::cout;
 
 // class FxArray {
 //     private:
@@ -171,7 +171,7 @@
 */
 
 #include <iostream>
-using namespace std;
+using std::cout;
 
 class FixedArray
 {

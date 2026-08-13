@@ -86,14 +86,12 @@ private:
                 delete node;
                 return nullptr;
             }
-
             else if (node->left != nullptr && node->right == nullptr)
             {
                 Node *temp = node->left;
                 delete node;
                 return temp;
             }
-
             else if (node->left == nullptr && node->right != nullptr)
             {
                 Node *temp = node->right;
@@ -181,10 +179,13 @@ public:
         {
             return search(node->left, value);
         }
-
-        if (value > node->data)
+        else if (value > node->data)
         {
             return search(node->right, value);
+        }
+        else
+        {
+            return true;
         }
     }
 

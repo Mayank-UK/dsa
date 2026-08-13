@@ -1,8 +1,9 @@
 - Done
-    - Array
-        - Fixed array
-        - Dynamic array
+    - What's not included in pending is considered done
+
 
 - Pending
     - Array
         - Suffix array
+    - Queue
+        - Priority queue, it requires binary heap

@@ -3,25 +3,29 @@
 
 using namespace std;
 
-class BinaryTree {
+class BinaryTree
+{
 private:
-    struct Node {
+    struct Node
+    {
         int data;
-        Node* left;
-        Node* right;
+        Node *left;
+        Node *right;
 
-        Node(int value) {
+        Node(int value)
+        {
             data = value;
             left = nullptr;
             right = nullptr;
         }
     };
 
-    Node* root;
+    Node *root;
 
     // ---------------- Traversals ----------------
 
-    void preorder(Node* node) {
+    void preorder(Node *node)
+    {
         if (node == nullptr)
             return;
 
@@ -30,7 +34,8 @@ private:
         preorder(node->right);
     }
 
-    void inorder(Node* node) {
+    void inorder(Node *node)
+    {
         if (node == nullptr)
             return;
 
@@ -39,7 +44,8 @@ private:
         inorder(node->right);
     }
 
-    void postorder(Node* node) {
+    void postorder(Node *node)
+    {
         if (node == nullptr)
             return;
 
@@ -50,7 +56,8 @@ private:
 
     // ---------------- Search ----------------
 
-    bool search(Node* node, int value) {
+    bool search(Node *node, int value)
+    {
         if (node == nullptr)
             return false;
 
@@ -62,14 +69,16 @@ private:
 
     // ---------------- Count ----------------
 
-    int countNodes(Node* node) {
+    int countNodes(Node *node)
+    {
         if (node == nullptr)
             return 0;
 
         return 1 + countNodes(node->left) + countNodes(node->right);
     }
 
-    int countLeaves(Node* node) {
+    int countLeaves(Node *node)
+    {
         if (node == nullptr)
             return 0;
 
@@ -80,7 +89,8 @@ private:
         return countLeaves(node->left) + countLeaves(node->right);
     }
 
-    int countInternal(Node* node) {
+    int countInternal(Node *node)
+    {
         if (node == nullptr)
             return 0;
 
@@ -93,7 +103,8 @@ private:
 
     // ---------------- Height ----------------
 
-    int height(Node* node) {
+    int height(Node *node)
+    {
         if (node == nullptr)
             return 0;
 
@@ -105,7 +116,8 @@ private:
 
     // ---------------- Destructor ----------------
 
-    void destroy(Node* node) {
+    void destroy(Node *node)
+    {
         if (node == nullptr)
             return;
 
@@ -116,12 +128,14 @@ private:
     }
 
 public:
-    BinaryTree() {
+    BinaryTree()
+    {
         root = nullptr;
     }
 
     // Build a sample tree
-    void createTree() {
+    void createTree()
+    {
 
         root = new Node(10);
 
@@ -137,33 +151,38 @@ public:
 
     // ---------------- Public wrappers ----------------
 
-    void preorder() {
+    void preorder()
+    {
         preorder(root);
         cout << endl;
     }
 
-    void inorder() {
+    void inorder()
+    {
         inorder(root);
         cout << endl;
     }
 
-    void postorder() {
+    void postorder()
+    {
         postorder(root);
         cout << endl;
     }
 
-    void levelOrder() {
+    void levelOrder()
+    {
 
         if (root == nullptr)
             return;
 
-        queue<Node*> q;
+        queue<Node *> q;
 
         q.push(root);
 
-        while (!q.empty()) {
+        while (!q.empty())
+        {
 
-            Node* current = q.front();
+            Node *current = q.front();
             q.pop();
 
             cout << current->data << " ";
@@ -178,32 +197,39 @@ public:
         cout << endl;
     }
 
-    bool search(int value) {
+    bool search(int value)
+    {
         return search(root, value);
     }
 
-    int countNodes() {
+    int countNodes()
+    {
         return countNodes(root);
     }
 
-    int countLeaves() {
+    int countLeaves()
+    {
         return countLeaves(root);
     }
 
-    int countInternalNodes() {
+    int countInternalNodes()
+    {
         return countInternal(root);
     }
 
-    int height() {
+    int height()
+    {
         return height(root);
     }
 
-    ~BinaryTree() {
+    ~BinaryTree()
+    {
         destroy(root);
     }
 };
 
-int main() {
+int main()
+{
 
     cout << "================ Binary Tree ================\n";
 

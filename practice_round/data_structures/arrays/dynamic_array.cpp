@@ -3,7 +3,7 @@
 */
 
 // #include <iostream>
-// using namespace std;
+// using std::cout;
 
 // class DynamicArray
 // {
@@ -207,7 +207,7 @@
 */
 
 #include <iostream>
-using namespace std;
+using std::cout;
 
 class DynamicArray
 {
