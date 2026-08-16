@@ -428,6 +428,24 @@ public:
         return false;
     }
 
+    bool recursiveSearch(Node *node, string word, int wordIndex)
+    {
+        // base case 1
+        if (wordIndex == word.length())
+        {
+            return node->isEndOfWord;
+        }
+
+        // base case 2
+        if (node->children.find(word[wordIndex]) == node->children.end())
+        {
+            return false;
+        }
+
+        // recursive step
+        return recursiveSearch(node->children[word[wordIndex]], word, ++wordIndex);
+    }
+
     bool startsWith(string word)
     {
         Node *current = root;
@@ -476,6 +494,39 @@ public:
     {
 
         return remove(root, word);
+    }
+
+    bool recursiveRemove(Node *node, string word, int index)
+    {
+        if (index == word.length())
+        {
+            // word is not part of the Trie
+            if (!node->isEndOfWord)
+            {
+                return false;
+            }
+
+            // word was part, but now no longer part
+            node->isEndOfWord = false;
+
+            // if it's a leaf node, it's safe to delete
+            return node->children.empty();
+        }
+
+        if (node->children.find(word[index]) == node->children.end())
+        {
+            return false;
+        }
+
+        bool canDeleteChild = recursiveRemove(node->children[word[index]], word, ++index);
+
+        if (canDeleteChild)
+        {
+            delete node->children[word[index]];
+            node->children.erase(word[index]);
+        }
+
+        return node->children.empty() && !node->isEndOfWord;
     }
 };
 
