@@ -219,7 +219,7 @@ public:
         return hasCycle;
     }
 
-    void showConnectedComponents()
+    void showWeaklyConnectedComponents()
     {
         unordered_set<int> visitedVertices;
         unordered_map<int, unordered_set<int>> connectedComponents;
@@ -236,6 +236,7 @@ public:
 
             visitedVertices.insert(startingVertex);
             connectedComponents[startingVertex] = {};
+            connectedComponents[startingVertex].insert(startingVertex);
             q.push(startingVertex);
 
             while (!q.empty())
@@ -243,6 +244,7 @@ public:
                 int front = q.front();
                 q.pop();
 
+                // traverse outgoing edges
                 for (int vertex : adj[front])
                 {
                     if (visitedVertices.find(vertex) == visitedVertices.end())
@@ -250,6 +252,25 @@ public:
                         visitedVertices.insert(vertex);
                         connectedComponents[startingVertex].insert(vertex);
                         q.push(vertex);
+                    }
+                }
+
+                // traverse incoming edges
+                for (auto adjItem : adj)
+                {
+                    for (int neighbour : adjItem.second)
+                    {
+                        if (neighbour == front)
+                        {
+                            int incomingVertex = adjItem.first;
+
+                            if (visitedVertices.find(incomingVertex) == visitedVertices.end())
+                            {
+                                visitedVertices.insert(incomingVertex);
+                                connectedComponents[startingVertex].insert(incomingVertex);
+                                q.push(incomingVertex);
+                            }
+                        }
                     }
                 }
             }
@@ -267,6 +288,8 @@ public:
             cout << "\n";
         }
     }
+
+    void showStronglyConnectedComponents() {}
 
     void showDegree(int vertex)
     {

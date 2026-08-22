@@ -18,11 +18,13 @@ using std::vector;
 
 struct Edge
 {
+    int source;
     int destination;
     int weight;
 
-    Edge(int dest, int w)
+    Edge(int sour, int dest, int w)
     {
+        source = sour;
         destination = dest;
         weight = w;
     }
@@ -33,7 +35,7 @@ struct Edge
     */
     bool operator==(const Edge &other) const
     {
-        return destination == other.destination && weight == other.weight;
+        return source == other.source && destination == other.destination && weight == other.weight;
     }
 };
 
@@ -52,7 +54,7 @@ struct EdgeHash
             1 ^ 0 = 1
             1 ^ 1 = 0
         */
-        return hash<int>{}(edge.destination) ^ (hash<int>{}(edge.weight) << 1);
+        return hash<int>{}(edge.source) ^ hash<int>{}(edge.destination) ^ (hash<int>{}(edge.weight) << 1);
     }
 };
 
@@ -65,9 +67,49 @@ private:
     */
     unordered_map<int, unordered_set<Edge, EdgeHash>> adj;
 
-    void dfsRecursive() {}
+    void dfsRecursive(int currentVertex, unordered_set<int> &visitedVertices, vector<int> &traversal)
+    {
+        visitedVertices.insert(currentVertex);
+        traversal.push_back(currentVertex);
 
-    void hasCycleRecursive() {}
+        for (auto neighbour : adj[currentVertex])
+        {
+            if (visitedVertices.find(neighbour.destination) != visitedVertices.end())
+            {
+                continue;
+            }
+
+            dfsRecursive(neighbour.destination, visitedVertices, traversal);
+        }
+    }
+
+    bool hasCycleRecursive(int currentVertex, unordered_set<int> &visitedVertices, unordered_set<int> &currentPath)
+    {
+        visitedVertices.insert(currentVertex);
+        currentPath.insert(currentVertex);
+
+        for (auto neighbour : adj[currentVertex])
+        {
+            if (visitedVertices.find(neighbour.destination) != visitedVertices.end())
+            {
+                if (currentPath.find(neighbour.destination) != currentPath.end())
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (hasCycleRecursive(neighbour.destination, visitedVertices, currentPath))
+            {
+                return true;
+            }
+        }
+
+        currentPath.erase(currentVertex);
+
+        return false;
+    }
 
 public:
     void addVertex(int vertex)
@@ -87,16 +129,109 @@ public:
             return;
         }
 
-        Edge newEdge(v2, weight);
+        Edge newEdge(v1, v2, weight);
 
         adj[v1].insert(newEdge);
     }
 
-    void bfsComplete() {}
+    void bfsComplete()
+    {
+        unordered_set<int> visitedVertices;
+        vector<int> traversal;
+        queue<int> q;
 
-    void dfsComplete() {}
+        for (auto adjItem : adj)
+        {
+            int startingVertex = adjItem.first;
 
-    bool hasCycle() {}
+            if (visitedVertices.find(startingVertex) != visitedVertices.end())
+            {
+                continue;
+            }
+
+            visitedVertices.insert(startingVertex);
+            traversal.push_back(startingVertex);
+            q.push(startingVertex);
+
+            while (!q.empty())
+            {
+                int front = q.front();
+                q.pop();
+
+                for (auto neighbour : adj[front])
+                {
+                    if (visitedVertices.find(neighbour.destination) == visitedVertices.end())
+                    {
+                        visitedVertices.insert(neighbour.destination);
+                        traversal.push_back(neighbour.destination);
+                        q.push(neighbour.destination);
+                    }
+                }
+            }
+        }
+
+        cout << "BFS: ";
+
+        for (int vertex : traversal)
+        {
+            cout << vertex << " ";
+        }
+
+        cout << "\n";
+    }
+
+    void dfsComplete()
+    {
+        unordered_set<int> visitedVertices;
+        vector<int> traversal;
+
+        for (auto adjItem : adj)
+        {
+            int startingVertex = adjItem.first;
+
+            if (visitedVertices.find(startingVertex) != visitedVertices.end())
+            {
+                continue;
+            }
+
+            dfsRecursive(startingVertex, visitedVertices, traversal);
+        }
+
+        cout << "DFS: ";
+
+        for (int vertex : traversal)
+        {
+            cout << vertex << " ";
+        }
+
+        cout << "\n";
+    }
+
+    bool hasCycle()
+    {
+        unordered_set<int> visitedVertices;
+        unordered_set<int> currentPath;
+        bool loopDetected = false;
+
+        for (auto adjItem : adj)
+        {
+            int startingVertex = adjItem.first;
+
+            if (visitedVertices.find(startingVertex) != visitedVertices.end())
+            {
+                continue;
+            }
+
+            loopDetected = hasCycleRecursive(startingVertex, visitedVertices, currentPath);
+
+            if (loopDetected)
+            {
+                break;
+            }
+        }
+
+        return loopDetected;
+    }
 
     bool hasVertex(int vertex)
     {
@@ -141,7 +276,78 @@ public:
         return count;
     }
 
-    void showConnectedComponents() {}
+    void showWeaklyConnectedComponents()
+    {
+        unordered_set<int> visitedVertices;
+        unordered_map<int, unordered_set<int>> connectedComponents;
+        queue<int> q;
+
+        for (auto adjItem : adj)
+        {
+            int startingVertex = adjItem.first;
+
+            if (visitedVertices.find(startingVertex) != visitedVertices.end())
+            {
+                continue;
+            }
+
+            visitedVertices.insert(startingVertex);
+            connectedComponents[startingVertex] = {};
+            connectedComponents[startingVertex].insert(startingVertex);
+            q.push(startingVertex);
+
+            while (!q.empty())
+            {
+                int front = q.front();
+                q.pop();
+
+                // traverse outgoing edges: front -> neighbour
+                for (auto neighbour : adj[front])
+                {
+                    if (visitedVertices.find(neighbour.destination) == visitedVertices.end())
+                    {
+                        visitedVertices.insert(neighbour.destination);
+                        connectedComponents[startingVertex].insert(neighbour.destination);
+                        q.push(neighbour.destination);
+                    }
+                }
+
+                // traverse incoming edges: neighbour -> front
+                for (auto adjItem : adj)
+                {
+                    for (auto edge : adjItem.second)
+                    {
+                        if (edge.destination == front)
+                        {
+                            int incomingVertex = adjItem.first;
+
+                            if (visitedVertices.find(incomingVertex) == visitedVertices.end())
+                            {
+                                // if not marked visited, it will be treated as starting of a separate component
+                                visitedVertices.insert(incomingVertex);
+                                connectedComponents[startingVertex].insert(incomingVertex);
+                                // if not pushed in the queue it won't be traversed
+                                q.push(incomingVertex);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (auto component : connectedComponents)
+        {
+            cout << component.first << ": ";
+            for (auto neighbour : component.second)
+            {
+                cout << neighbour;
+            }
+
+            cout << "\n";
+        }
+    }
+
+    void showStronglyConnectedComponents() {}
 
     void showDegree(int vertex)
     {
