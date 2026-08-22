@@ -1,65 +1,133 @@
 #include <iostream>
 #include <vector>
+#include <climits>
+#include <algorithm>
 
 using namespace std;
 
-class SegmentTree {
+class SegmentTree
+{
 
 private:
+    // ---------------- Node ----------------
 
-    vector<int> tree;
+    struct Node
+    {
+
+        int sum;
+        int minimum;
+        int maximum;
+    };
+
+    vector<Node> tree;
     vector<int> arr;
 
     int n;
 
+    // ---------------- Merge ----------------
+
+    Node merge(Node left, Node right)
+    {
+
+        Node result;
+
+        result.sum =
+            left.sum +
+            right.sum;
+
+        result.minimum =
+            min(left.minimum,
+                right.minimum);
+
+        result.maximum =
+            max(left.maximum,
+                right.maximum);
+
+        return result;
+    }
+
     // ---------------- Build ----------------
 
-    void build(int node, int start, int end) {
+    void build(int node, int start, int end)
+    {
 
-        if (start == end) {
+        if (start == end)
+        {
 
-            tree[node] = arr[start];
+            tree[node].sum = arr[start];
+
+            tree[node].minimum = arr[start];
+
+            tree[node].maximum = arr[start];
+
             return;
         }
 
         int mid = (start + end) / 2;
 
-        build(2 * node, start, mid);
+        build(2 * node,
+              start,
+              mid);
 
-        build(2 * node + 1, mid + 1, end);
+        build(2 * node + 1,
+              mid + 1,
+              end);
 
         tree[node] =
-            tree[2 * node] +
-            tree[2 * node + 1];
+            merge(tree[2 * node],
+                  tree[2 * node + 1]);
     }
 
     // ---------------- Range Query ----------------
 
-    int query(int node, int start, int end, int left, int right) {
+    Node query(int node,
+               int start,
+               int end,
+               int left,
+               int right)
+    {
 
         // No overlap
 
         if (right < start ||
             left > end)
-            return 0;
+        {
+
+            return {
+                0,
+                INT_MAX,
+                INT_MIN};
+        }
 
         // Complete overlap
 
         if (left <= start &&
             end <= right)
+        {
+
             return tree[node];
+        }
 
         // Partial overlap
 
         int mid = (start + end) / 2;
 
-        int leftSum =
-            query(2 * node, start, mid, left, right);
+        Node leftResult =
+            query(2 * node,
+                  start,
+                  mid,
+                  left,
+                  right);
 
-        int rightSum =
-            query(2 * node + 1, mid + 1, end, left, right);
+        Node rightResult =
+            query(2 * node + 1,
+                  mid + 1,
+                  end,
+                  left,
+                  right);
 
-        return leftSum + rightSum;
+        return merge(leftResult,
+                     rightResult);
     }
 
     // ---------------- Point Update ----------------
@@ -68,31 +136,55 @@ private:
                 int start,
                 int end,
                 int index,
-                int value) {
+                int value)
+    {
 
-        if (start == end) {
+        if (start == end)
+        {
 
             arr[index] = value;
-            tree[node] = value;
+
+            tree[node].sum = value;
+
+            tree[node].minimum = value;
+
+            tree[node].maximum = value;
+
             return;
         }
 
         int mid = (start + end) / 2;
 
         if (index <= mid)
-            update(2 * node, start, mid, index, value);
+        {
+
+            update(2 * node,
+                   start,
+                   mid,
+                   index,
+                   value);
+        }
 
         else
-            update(2 * node + 1, mid + 1, end, index, value);
+        {
+
+            update(2 * node + 1,
+                   mid + 1,
+                   end,
+                   index,
+                   value);
+        }
 
         tree[node] =
-            tree[2 * node] +
-            tree[2 * node + 1];
+            merge(tree[2 * node],
+                  tree[2 * node + 1]);
     }
 
 public:
+    // ---------------- Constructor ----------------
 
-    SegmentTree(vector<int> values) {
+    SegmentTree(vector<int> values)
+    {
 
         arr = values;
 
@@ -100,27 +192,78 @@ public:
 
         tree.resize(4 * n);
 
-        build(1, 0, n - 1);
+        if (n > 0)
+            build(1, 0, n - 1);
+    }
+
+    // ---------------- Range Query ----------------
+
+    Node rangeQuery(int left, int right)
+    {
+
+        if (n == 0)
+            return {0, INT_MAX, INT_MIN};
+
+        if (left < 0 ||
+            right >= n ||
+            left > right)
+            return {0, INT_MAX, INT_MIN};
+
+        return query(1,
+                     0,
+                     n - 1,
+                     left,
+                     right);
     }
 
     // ---------------- Range Sum ----------------
 
-    int rangeSum(int left, int right) {
+    int rangeSum(int left, int right)
+    {
 
-        return query(1, 0, n - 1, left, right);
+        return rangeQuery(left, right).sum;
+    }
+
+    // ---------------- Range Minimum ----------------
+
+    int rangeMinimum(int left, int right)
+    {
+
+        return rangeQuery(left, right).minimum;
+    }
+
+    // ---------------- Range Maximum ----------------
+
+    int rangeMaximum(int left, int right)
+    {
+
+        return rangeQuery(left, right).maximum;
     }
 
     // ---------------- Update ----------------
 
     void update(int index,
-                int value) {
+                int value)
+    {
 
-        update(1, 0, n - 1, index, value);
+        if (n == 0)
+            return;
+
+        if (index < 0 ||
+            index >= n)
+            return;
+
+        update(1,
+               0,
+               n - 1,
+               index,
+               value);
     }
 
-    // ---------------- Display Original Array ----------------
+    // ---------------- Display Array ----------------
 
-    void displayArray() {
+    void displayArray()
+    {
 
         for (int value : arr)
             cout << value << " ";
@@ -130,28 +273,41 @@ public:
 
     // ---------------- Display Tree ----------------
 
-    void displayTree() {
+    void displayTree()
+    {
 
         cout << "Segment Tree:\n";
 
         for (int i = 1; i < 2 * n; i++)
-            cout << tree[i] << " ";
+        {
+
+            cout << "["
+                 << tree[i].sum
+                 << ", min="
+                 << tree[i].minimum
+                 << ", max="
+                 << tree[i].maximum
+                 << "] ";
+        }
 
         cout << endl;
     }
 
-        // ---------------- Size ----------------
+    // ---------------- Size ----------------
 
-    int size() {
+    int size()
+    {
 
         return n;
     }
 
     // ---------------- Value At Index ----------------
 
-    int at(int index) {
+    int at(int index)
+    {
 
-        if (index < 0 || index >= n)
+        if (index < 0 ||
+            index >= n)
             return -1;
 
         return arr[index];
@@ -159,73 +315,76 @@ public:
 
     // ---------------- Total Sum ----------------
 
-    int totalSum() {
+    int totalSum()
+    {
 
         if (n == 0)
             return 0;
 
-        return tree[1];
+        return tree[1].sum;
     }
 
-    // ---------------- Minimum (Brute Force) ----------------
+    // ---------------- Minimum ----------------
 
-    int minimum() {
+    int minimum()
+    {
 
         if (n == 0)
             return -1;
 
-        int minimum = arr[0];
-
-        for (int value : arr)
-            if (value < minimum)
-                minimum = value;
-
-        return minimum;
+        return tree[1].minimum;
     }
 
-    // ---------------- Maximum (Brute Force) ----------------
+    // ---------------- Maximum ----------------
 
-    int maximum() {
+    int maximum()
+    {
 
         if (n == 0)
             return -1;
 
-        int maximum = arr[0];
-
-        for (int value : arr)
-            if (value > maximum)
-                maximum = value;
-
-        return maximum;
+        return tree[1].maximum;
     }
-
 };
 
-int main() {
+int main()
+{
 
     vector<int> values = {
         2, 4, 5, 7,
-        8, 9, 1, 6
-    };
+        8, 9, 1, 6};
 
     SegmentTree tree(values);
 
     cout << "============= Segment Tree =============\n";
+
     cout << "\n===== Original Array =====\n";
     tree.displayArray();
 
     cout << "\n===== Segment Tree =====\n";
     tree.displayTree();
 
-    cout << "\n===== Range Sum Queries =====\n";
+    cout << "\n===== Range Queries =====\n";
 
-    cout << "Sum [0, 3] = " << tree.rangeSum(0, 3) << endl;
+    cout << "Range [0, 3]\n";
+    cout << "Sum     = " << tree.rangeSum(0, 3) << endl;
+    cout << "Minimum = " << tree.rangeMinimum(0, 3) << endl;
+    cout << "Maximum = " << tree.rangeMaximum(0, 3) << endl;
 
-    cout << "Sum [2, 5] = " << tree.rangeSum(2, 5) << endl;
+    cout << "\nRange [2, 5]\n";
+    cout << "Sum     = " << tree.rangeSum(2, 5) << endl;
+    cout << "Minimum = " << tree.rangeMinimum(2, 5) << endl;
+    cout << "Maximum = " << tree.rangeMaximum(2, 5) << endl;
 
-    cout << "Sum [0, 7] = " << tree.rangeSum(0, 7) << endl;
+    cout << "\nRange [0, 7]\n";
+    cout << "Sum     = " << tree.rangeSum(0, 7) << endl;
+    cout << "Minimum = " << tree.rangeMinimum(0, 7) << endl;
+    cout << "Maximum = " << tree.rangeMaximum(0, 7) << endl;
 
-    cout << "Sum [4, 6] = " << tree.rangeSum(4, 6) << endl;
+    cout << "\nRange [4, 6]\n";
+    cout << "Sum     = " << tree.rangeSum(4, 6) << endl;
+    cout << "Minimum = " << tree.rangeMinimum(4, 6) << endl;
+    cout << "Maximum = " << tree.rangeMaximum(4, 6) << endl;
 
     cout << "\n===== Update =====\n";
 
@@ -240,11 +399,20 @@ int main() {
 
     cout << "\n===== Queries After Update =====\n";
 
-    cout << "Sum [0, 3] = " << tree.rangeSum(0, 3) << endl;
+    cout << "Range [0, 3]\n";
+    cout << "Sum     = " << tree.rangeSum(0, 3) << endl;
+    cout << "Minimum = " << tree.rangeMinimum(0, 3) << endl;
+    cout << "Maximum = " << tree.rangeMaximum(0, 3) << endl;
 
-    cout << "Sum [2, 5] = " << tree.rangeSum(2, 5) << endl;
+    cout << "\nRange [2, 5]\n";
+    cout << "Sum     = " << tree.rangeSum(2, 5) << endl;
+    cout << "Minimum = " << tree.rangeMinimum(2, 5) << endl;
+    cout << "Maximum = " << tree.rangeMaximum(2, 5) << endl;
 
-    cout << "Sum [0, 7] = " << tree.rangeSum(0, 7) << endl;
+    cout << "\nRange [0, 7]\n";
+    cout << "Sum     = " << tree.rangeSum(0, 7) << endl;
+    cout << "Minimum = " << tree.rangeMinimum(0, 7) << endl;
+    cout << "Maximum = " << tree.rangeMaximum(0, 7) << endl;
 
     cout << "\n===== Statistics =====\n";
 
@@ -256,8 +424,11 @@ int main() {
 
     cout << "Maximum   : " << tree.maximum() << endl;
 
-    cout << "\nValue at index 5 : " << tree.at(5) << endl;
+    cout << "\nValue at index 5 : "
+         << tree.at(5)
+         << endl;
 
     cout << "\n========================================\n";
+
     return 0;
 }

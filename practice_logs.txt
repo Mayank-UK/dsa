@@ -5,5 +5,10 @@
 - Pending
     - Array
         - Suffix array
-    - Queue
-        - Priority queue, it requires binary heap
+    - Tree
+        - B Tree
+        - B+ Tree
+        - Suffix Tree
+        - Treap
+    - 
+    

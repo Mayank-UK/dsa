@@ -3,39 +3,46 @@
 
 using namespace std;
 
-class FenwickTree {
+class FenwickTree
+{
 
 private:
-
     vector<int> bit;
     vector<int> arr;
 
     int n;
 
 public:
-
     // ---------------- Constructor ----------------
 
-    FenwickTree(vector<int> values) {
-
-        arr = values;
-
+    FenwickTree(vector<int> &arr)
+    {
         n = arr.size();
 
-        bit.resize(n + 1, 0);
+        bit.resize(n + 1);
 
-        for (int i = 0; i < n; i++)
-            update(i, arr[i]);
+        for (int i = 1; i <= n; i++)
+            bit[i] = arr[i - 1];
+
+        for (int i = 1; i <= n; i++)
+        {
+            int parent = i + (i & -i);
+
+            if (parent <= n)
+                bit[parent] += bit[i];
+        }
     }
 
     // ---------------- Point Update ----------------
 
     void update(int index,
-                int delta) {
+                int delta)
+    {
 
         index++;
 
-        while (index <= n) {
+        while (index <= n)
+        {
 
             bit[index] += delta;
 
@@ -45,13 +52,15 @@ public:
 
     // ---------------- Prefix Sum ----------------
 
-    int prefixSum(int index) {
+    int prefixSum(int index)
+    {
 
         index++;
 
         int sum = 0;
 
-        while (index > 0) {
+        while (index > 0)
+        {
 
             sum += bit[index];
 
@@ -63,7 +72,8 @@ public:
 
     // ---------------- Range Sum ----------------
 
-    int rangeSum(int left, int right) {
+    int rangeSum(int left, int right)
+    {
 
         if (left == 0)
             return prefixSum(right);
@@ -73,7 +83,8 @@ public:
 
     // ---------------- Set Value ----------------
 
-    void setValue(int index, int value) {
+    void setValue(int index, int value)
+    {
 
         int delta = value - arr[index];
 
@@ -84,14 +95,16 @@ public:
 
     // ---------------- Get Value ----------------
 
-    int at(int index) {
+    int at(int index)
+    {
 
         return arr[index];
     }
 
     // ---------------- Display Array ----------------
 
-    void displayArray() {
+    void displayArray()
+    {
 
         for (int value : arr)
             cout << value << " ";
@@ -101,7 +114,8 @@ public:
 
     // ---------------- Display BIT ----------------
 
-    void displayBIT() {
+    void displayBIT()
+    {
 
         cout << "Binary Indexed Tree:\n";
 
@@ -111,16 +125,18 @@ public:
         cout << endl;
     }
 
-        // ---------------- Size ----------------
+    // ---------------- Size ----------------
 
-    int size() {
+    int size()
+    {
 
         return n;
     }
 
     // ---------------- Total Sum ----------------
 
-    int totalSum() {
+    int totalSum()
+    {
 
         if (n == 0)
             return 0;
@@ -130,7 +146,8 @@ public:
 
     // ---------------- Minimum ----------------
 
-    int minimum() {
+    int minimum()
+    {
 
         if (n == 0)
             return -1;
@@ -146,7 +163,8 @@ public:
 
     // ---------------- Maximum ----------------
 
-    int maximum() {
+    int maximum()
+    {
 
         if (n == 0)
             return -1;
@@ -162,19 +180,19 @@ public:
 
     // ---------------- Empty ----------------
 
-    bool empty() {
+    bool empty()
+    {
 
         return n == 0;
     }
-
 };
 
-int main() {
+int main()
+{
 
     vector<int> values = {
         2, 4, 5, 7,
-        8, 9, 1, 6
-    };
+        8, 9, 1, 6};
 
     FenwickTree bit(values);
 
