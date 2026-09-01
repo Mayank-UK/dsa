@@ -3,12 +3,19 @@
 
 
 - Pending
-    - Array
-        - Suffix array
-    - Tree
-        - B Tree
-        - B+ Tree
-        - Suffix Tree
-        - Treap
-    - 
-    
+    - Data structures
+        - Array
+            - Suffix array
+        - Stack
+            - Monotonic stack
+        - Tree
+            - B Tree
+            - B+ Tree
+            - Suffix Tree
+            - Treap
+        - Heap
+            - Two heaps
+    - Algorithms
+        - Matrix chain multiplication DP
+        - DP on digits
+        - DP on trees
